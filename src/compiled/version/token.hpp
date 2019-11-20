@@ -7,84 +7,37 @@
 #include <regex>
 #include <vector>
 
+#include <fmt/format.h>
+
 namespace rez
 {
 
-//
-// Value interface comparators
-//
-// TODO: instead of heaving 5 variations, we could have >=, <=, == only.
-//
-template <typename _Lt, typename _Rt> bool less(const Value<_Lt>& lhs, const Value<_Rt>& rhs)
-{
-    return lhs.Get() < rhs.Get();
-}
-
-template <typename _Lt, typename _Rt> bool greater(const Value<_Lt>& lhs, const Value<_Rt>& rhs)
-{
-    return lhs.Get() > rhs.Get();
-}
-
-template <typename _Lt, typename _Rt> bool less_equal_to(const Value<_Lt>& lhs, const Value<_Rt>& rhs)
-{
-    return lhs.Get() <= rhs.Get();
-}
-
-template <typename _Lt, typename _Rt> bool greater_equal_to(const Value<_Lt>& lhs, const Value<_Rt>& rhs)
-{
-    return lhs.Get() >= rhs.Get();
-}
-
-template <typename _Lt, typename _Rt> bool equal_to(const Value<_Lt>& lhs, const Value<_Rt>& rhs)
-{
-    return lhs.Get() == rhs.Get();
-}
-
-template <typename _Lt, typename _Rt> bool not_equal_to(const Value<_Lt>& lhs, const Value<_Rt>& rhs)
-{
-    return lhs.Get() != rhs.Get();
-}
-
-//
-// Comparable
-// https://en.wikipedia.org/wiki/Barton%E2%80%93Nackman_trick
-template <typename _Lt, typename _Rt> struct Comparable
-{
-    friend bool operator<(const _Lt& lhs, const _Rt& rhs) { return less(lhs, rhs); }
-    friend bool operator>(const _Lt& lhs, const _Rt& rhs) { return greater(lhs, rhs); }
-
-    friend bool operator<=(const _Lt& lhs, const _Rt& rhs) { return less_equal_to(lhs, rhs); }
-    friend bool operator>=(const _Lt& lhs, const _Rt& rhs) { return greater_equal_to(lhs, rhs); }
-
-    friend bool operator==(const _Lt& lhs, const _Rt& rhs) { return equal_to(lhs, rhs); }
-    friend bool operator!=(const _Lt& lhs, const _Rt& rhs) { return not_equal_to(lhs, rhs); }
-
-protected:
-    Comparable() = default;
-
-private:
-    _Lt& ThisT() { return static_cast<_Lt&>(*this); }
-    const _Lt& ThisT() const { return static_cast<const _Lt&>(*this); }
-};
+template<typename T> using Token = Value<T>;
 
 //
 // NumericToken impl
 //
-class NumericToken : public Value<r_int>,
-                     public Comparable<NumericToken, r_int>,
+class NumericToken : public Value<rez_int>,
+                     public Comparable<NumericToken, rez_int>,
                      public Comparable<NumericToken, NumericToken>
 {
 public:
-    using value_type = r_int;
+    using value_type = rez_int;
 
     explicit NumericToken(string_view token)
-        : Value{string_to_int(token)}
+        : Value{to_int(token)}
     {
     }
 
-    explicit operator r_str() const { return std::to_string(Get()); }
+    explicit operator std::string() const { return std::to_string(Get()); }
     friend std::ostream& operator<<(std::ostream& os, const NumericToken& v) { return (os << v.Get()); }
 };
+
+//struct SubTokenHelper
+//{
+//    string_view s;
+//    rez_int  n;
+//};
 
 //
 // weak reference does not throw
@@ -95,34 +48,34 @@ public:
     explicit SubToken(string_view v) REZ_NOEXCEPT
     {
         s = v;
-        n = is_digit(v) ? string_to_int(v) : R_INT_INVALID;
+        n = is_digit(v) ? to_int(v) : REZ_INT_INVALID;
     }
 
     bool operator<(const SubToken& other) const REZ_NOEXCEPT
     {
-        if (n == R_INT_INVALID)
+        if (n == REZ_INT_INVALID)
         {
-            return other.n == R_INT_INVALID ? s < other.s : true;
+            return other.n == REZ_INT_INVALID ? s < other.s : true;
         }
 
-        return other.n == R_INT_INVALID ? false : std::tie(n, s) < std::tie(other.n, other.s);
+        return other.n == REZ_INT_INVALID ? false : std::tie(n, s) < std::tie(other.n, other.s);
     }
 
     bool operator==(const SubToken& other) const REZ_NOEXCEPT { return (s == other.s) && (n == other.n); }
 
     string_view s;
-    r_int n;
+    rez_int n;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const SubToken& other)
 {
-    return (other.n == R_INT_INVALID ? os << other.s : os << other.n);
+    return (other.n == REZ_INT_INVALID ? os << other.s : os << other.n);
 }
 
 //
 // AlphanumericToken impl
 //
-class AlphanumericToken : public Value<std::vector<SubToken>>,
+class AlphanumericToken : public ValueArray<SubToken>,
                           public Comparable<AlphanumericToken, std::vector<SubToken>>,
                           public Comparable<AlphanumericToken, AlphanumericToken>
 {
@@ -133,9 +86,9 @@ public:
     }
 
     AlphanumericToken(string_view token, bool deep_copy)
-        : Value<std::vector<SubToken>>({})
+        : ValueArray<SubToken>({})
     {
-        if (token.empty() && !is_alnum(token))
+        if (token.empty() && !is_alphanumeric(token))
         {
             // TODO:: prealocate string
             std::string message{"Invalid string to parse "};
@@ -150,7 +103,7 @@ public:
             cached_token = {cached_.c_str(), cached_.size()};
         }
 
-        // split by numers
+        // split by numbers
         static const std::regex n_regex{R"([0-9]+)", std::regex::optimize};
 
         std::regex_iterator<string_view::const_iterator> it{cached_token.cbegin(), cached_token.cend(), n_regex};
@@ -179,7 +132,17 @@ public:
         }
     }
 
-    explicit operator r_str() const { return ""; }
+    explicit operator std::string() const
+    {
+        std::string str;
+        for(const auto& sub_token : Get() )
+        {
+            str += sub_token.s.to_string();
+            // TODO fix copying std string
+            //fmt::format_to(buff, sub_token.s.to_string());
+        }
+        return str;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const AlphanumericToken& v)
     {
@@ -191,7 +154,7 @@ public:
     }
 
 private:
-    r_str cached_;
+    std::string cached_;
 };
 
 //

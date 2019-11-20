@@ -3,15 +3,20 @@
 
 #include "token.hpp"
 
-#include <functional>
-
 namespace rez
 {
 
-template <typename T> class Version
+struct VersionHelper
+{
+    std::string str_;
+    std::hash<std::string> hash_;
+};
+
+template <typename T> class Version : public VersionHelper,
+                                      public Value<std::vector<T>>
 {
 public:
-    explicit Version(string_view ver_str, const T&)
+    explicit Version(string_view ver_str, const T& value)
     {
         if (!ver_str.empty())
         {
@@ -20,10 +25,6 @@ public:
     }
 
 private:
-    std::string str_;
-    std::hash<std::string> hash_;
-
-    std::vector<T> tokens_;
     std::vector<string_view> seps_;
 };
 

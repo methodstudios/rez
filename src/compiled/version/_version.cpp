@@ -3,6 +3,8 @@
 #include <Python.h>
 #include <pybind11/pybind11.h>
 
+#include <vector>
+
 namespace py = pybind11;
 using namespace rez;
 
@@ -12,11 +14,11 @@ namespace
 template <typename _Cls> void _Comparable(py::class_<_Cls>& o)
 {
     //    o.def("__lt__", &_Cls::operator<);
-    //    o.def("__gt__", &_Cls::operator>);
-    //    o.def("__le__", &_Cls::operator<=);
-    //    o.def("__ge__", &_Cls::operator>=);
-    //    o.def("__eq__", &_Cls::operator==);
-    //    o.def("__ne__", &_Cls::operator!=);
+//        o.def("__gt__", &_Cls::operator>);
+//        o.def("__le__", &_Cls::operator<=);
+//        o.def("__ge__", &_Cls::operator>=);
+//        o.def("__eq__", &_Cls::operator==);
+//        o.def("__ne__", &_Cls::operator!=);
 }
 
 } // namespace
@@ -26,33 +28,31 @@ template <typename _Cls> void _Comparable(py::class_<_Cls>& o)
 //
 PYBIND11_MODULE(_version, m)
 {
-    static py::exception<VersionError> version_exception{m, "VersionError"};
-    py::register_exception_translator([](std::exception_ptr p) {
-        try
-        {
-            if (p)
-                std::rethrow_exception(p);
-        }
-        catch (const VersionError& e)
-        {
-            version_exception(e.what());
-        }
-    });
+//    static py::exception<VersionError> version_exception{m, "VersionError"};
+//    py::register_exception_translator([](std::exception_ptr p) {
+//        try
+//        {
+//            if (p)
+//                std::rethrow_exception(p);
+//        }
+//        catch (const VersionError& e)
+//        {
+//            version_exception(e.what());
+//        }
+//    });
 
     // Version Value backward compatibility for clients who checked isinstance(obj, VersionToken)
-    class VersionToken
-    {
-    };
-    py::class_<VersionToken> version_token{m, "VersionToken"};
+    class VersionToken{};
+    py::class_<VersionToken> version_token{m, "VersionToken", py::module_local()};
 
     // Numeric Value
-    py::class_<NumericToken> numeric_token{m, "NumericToken", version_token};
+    py::class_<NumericToken> numeric_token{m, "NumericToken", py::module_local(), version_token};
     numeric_token.def(py::init<const char*>());
     numeric_token.def("__str__", [](const NumericToken& nt) { return std::string(nt); });
     _Comparable(numeric_token);
 
     // Alphanumeric Value
-    py::class_<AlphanumericToken> alpha_token{m, "AlphanumericVersionToken", version_token};
+    py::class_<AlphanumericToken> alpha_token{m, "AlphanumericVersionToken", py::module_local(), version_token};
     alpha_token.def(py::init<const char*>());
     alpha_token.def("__str__", [](const AlphanumericToken& at) { return std::string(at); });
     _Comparable(alpha_token);
