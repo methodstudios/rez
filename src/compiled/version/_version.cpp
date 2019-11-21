@@ -1,33 +1,34 @@
 #include "version.hpp"
 
-#include <Python.h>
 #include <pybind11/pybind11.h>
-
-#include <vector>
 
 namespace py = pybind11;
 using namespace rez;
 
-namespace
+template<typename T, typename P> py::class_<T> define_token(py::module& m, const char* name, py::class_<P>& parent)
 {
-
-template <typename _Cls> void _Comparable(py::class_<_Cls>& o)
-{
-    //    o.def("__lt__", &_Cls::operator<);
-//        o.def("__gt__", &_Cls::operator>);
-//        o.def("__le__", &_Cls::operator<=);
-//        o.def("__ge__", &_Cls::operator>=);
-//        o.def("__eq__", &_Cls::operator==);
-//        o.def("__ne__", &_Cls::operator!=);
+    py::class_<T> token{m, name, parent, py::module_local()};
+    token.def(py::init<const char*>());
+    token.def("__repr__", [](const T& t) { return std::string(t); });
+    token.def("__str__", [](const T& t) { return std::string(t); });
+    token.def("__lt__", [](const T& lhs, const T& rhs)
+    {
+        return lhs < rhs;
+    });
+    return token;
 }
 
-} // namespace
-
-//
-// Module
-//
+// https://stackoverflow.com/questions/51058336/pybind-curiously-recurring-template
 PYBIND11_MODULE(_version, m)
 {
+    // Version Value backward compatibility for clients who checked isinstance(obj, VersionToken)
+    class VersionToken{};
+    py::class_<VersionToken> version_token{m, "VersionToken", py::module_local()};
+
+    auto numer_token = define_token<NumericToken, VersionToken>(m, "NumericToken", version_token);
+    auto alnum_token = define_token<AlphanumericToken, VersionToken>(m, "AlphanumericVersionToken", version_token);
+    alnum_token.def("__len__", &AlphanumericToken::Size);
+
 //    static py::exception<VersionError> version_exception{m, "VersionError"};
 //    py::register_exception_translator([](std::exception_ptr p) {
 //        try
@@ -40,30 +41,4 @@ PYBIND11_MODULE(_version, m)
 //            version_exception(e.what());
 //        }
 //    });
-
-    // Version Value backward compatibility for clients who checked isinstance(obj, VersionToken)
-    class VersionToken{};
-    py::class_<VersionToken> version_token{m, "VersionToken", py::module_local()};
-
-    // Numeric Value
-    py::class_<NumericToken> numeric_token{m, "NumericToken", py::module_local(), version_token};
-    numeric_token.def(py::init<const char*>());
-    numeric_token.def("__str__", [](const NumericToken& nt) { return std::string(nt); });
-    _Comparable(numeric_token);
-
-    // Alphanumeric Value
-    py::class_<AlphanumericToken> alpha_token{m, "AlphanumericVersionToken", py::module_local(), version_token};
-    alpha_token.def(py::init<const char*>());
-    alpha_token.def("__str__", [](const AlphanumericToken& at) { return std::string(at); });
-    _Comparable(alpha_token);
-
-    //    class Version{};
-    //    py::class_<VersionToken> version{m, "Version"};
-    //
-    //    // proper constructor
-    //    py::class_<NumericVersion> n_version{m, "NumericVersion", version};
-    //    n_version.def(py::init<const NumericToken&>());
-    //
-    //    py::class_<AlphanumericVersion> a_version{m, "AlphanumericVersion", version};
-    //    a_version.def(py::init<const AlphanumericToken&>());
 }

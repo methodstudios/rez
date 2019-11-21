@@ -1,20 +1,21 @@
 #include <gtest/gtest.h>
-#include <fmt/format.h>
 
-#include "../version/value.hpp"
-#include "../version/token.hpp"
-
-using namespace rez;
+#include "../version/NewVersion.hpp"
 
 TEST(ValueArray, Methods)
 {
-    ValueArray<int> int_arr;
-    int_arr.Append(10);
-    int_arr.Append(200);
+    auto k = create_numeric_token("10");
+    std::cout << k << std::endl;
 
-    EXPECT_EQ(int_arr[0], 10);
-    EXPECT_EQ(int_arr[1], 200);
+    auto u = create_numeric_token<true>("20");
+    std::cout << u << std::endl;
 
+//    auto rk = get_reversed(k);
+//    auto rj = get_reversed(j);
+//    auto rrk = get_reversed(rk);
 //
-//    std::cout << tok.Size() << std::endl;
+//    std::cout << (k < j) << std::endl;
+//    std::cout << (rj < rk) << std::endl;
+
+    // Value<_Type> must be type of storage, so if we store it in the Version, how can we make version reversible?
 }

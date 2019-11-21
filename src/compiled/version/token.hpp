@@ -17,9 +17,8 @@ template<typename T> using Token = Value<T>;
 //
 // NumericToken impl
 //
-class NumericToken : public Value<rez_int>,
-                     public Comparable<NumericToken, rez_int>,
-                     public Comparable<NumericToken, NumericToken>
+class NumericToken : public Value<rez_int>
+                   , public Comparable<NumericToken, NumericToken>
 {
 public:
     using value_type = rez_int;
@@ -75,11 +74,12 @@ inline std::ostream& operator<<(std::ostream& os, const SubToken& other)
 //
 // AlphanumericToken impl
 //
-class AlphanumericToken : public ValueArray<SubToken>,
-                          public Comparable<AlphanumericToken, std::vector<SubToken>>,
-                          public Comparable<AlphanumericToken, AlphanumericToken>
+class AlphanumericToken : public ValueArray<SubToken>
+                        , public Comparable<AlphanumericToken, AlphanumericToken>
 {
 public:
+    using value_type = std::vector<SubToken>;
+
     explicit AlphanumericToken(string_view token)
         : AlphanumericToken(token, true)
     {
