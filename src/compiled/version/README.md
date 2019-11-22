@@ -1,4 +1,4 @@
-# Compiled `version`
+# WIP: compiled `version`
 
 ## Common type
 
@@ -9,11 +9,11 @@ First template argument `T` is used to define underlying type.
 Second template argument `bool` is used to control behaviour of comparisons operators. For instance:
 
 ```c++
-auto a = ComparableValue<int, false>{10}; // comparisions:  < 
-auto b = ComparableValue<int, true>{11};  // comparisions: !<
+auto a = ComparableValue<int, false>{10}; // comparison:  < 
+auto b = ComparableValue<int, true>{11};  // comparison: !<
 
-auto ra = a < b; // true - normal comparision
-auto rb = b < a; // true - reversed comparision
+auto ra = a < b; // true - normal comparison
+auto rb = b < a; // true - reversed comparison
 ```
 
 `ComparableValue<int, false>` can be easily converted to `ComparableValue<int, true>` and vice versa, but that requires underlying data to be copied.
@@ -54,7 +54,7 @@ template<bool _Rev = false> NumericTokenT<_Rev> create_numeric_token(string_view
 ## Comparisons
 
 `bool` template argument is only used to match the specialization, and to call proper overloaded comparison operator, 
-but during comparision itself, aforementioned `bool` value is discarded.
+but during comparison itself, aforementioned `bool` value is discarded.
 
 Partial specialization for `ComparableValue<T, false>`:
 
