@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "../version/token.hpp"
+#include "../version/Token.hpp"
 
 #include <limits>
 #include <utility>
 #include <tuple>
-
-using namespace rez;
 
 //
 // Numeric Token
@@ -16,7 +14,7 @@ using namespace rez;
 class NumericTokenThrowTest : public ::testing::TestWithParam<const char*> {};
 TEST_P(NumericTokenThrowTest, InitializationThrow)
 {
-    EXPECT_THROW(NumericToken{GetParam()}, std::invalid_argument);
+    EXPECT_THROW(create_numeric_token(GetParam()), std::invalid_argument);
 }
 INSTANTIATE_TEST_SUITE_P(InitializationThrow, NumericTokenThrowTest,
                          testing::Values(
@@ -34,7 +32,7 @@ INSTANTIATE_TEST_SUITE_P(InitializationThrow, NumericTokenThrowTest,
 class NumericTokenNoThrowTest : public ::testing::TestWithParam<const char*> {};
 TEST_P(NumericTokenNoThrowTest, InitializationNoThrow)
 {
-    EXPECT_NO_THROW(NumericToken{GetParam()});
+    EXPECT_NO_THROW(create_numeric_token(GetParam()));
 }
 INSTANTIATE_TEST_SUITE_P(InitializationNoThrow, NumericTokenNoThrowTest,
                          testing::Values(
@@ -46,7 +44,7 @@ INSTANTIATE_TEST_SUITE_P(InitializationNoThrow, NumericTokenNoThrowTest,
 class NumericTokenComparisionTest : public ::testing::TestWithParam<std::pair<const char*, const char*>> {};
 TEST_P(NumericTokenComparisionTest, IsLess)
 {
-    EXPECT_LT(NumericToken{GetParam().first}, NumericToken{GetParam().second});
+    EXPECT_LT(create_numeric_token(GetParam().first), create_numeric_token(GetParam().second));
 }
 
 INSTANTIATE_TEST_SUITE_P(Something, NumericTokenComparisionTest,
@@ -60,7 +58,8 @@ class NumericTokenStringTest : public testing::TestWithParam<std::pair<const cha
 TEST_P(NumericTokenStringTest, IsEqual)
 {
     const auto& p = GetParam();
-    std::string str{NumericToken(p.first)};
+    NumericToken nt = create_numeric_token(p.first);
+    std::string str = to_string(nt);
     EXPECT_STREQ(str.c_str(), p.second);
 }
 INSTANTIATE_TEST_SUITE_P(Init, NumericTokenStringTest,
@@ -78,7 +77,7 @@ class SubTokenTest : public ::testing::TestWithParam<std::tuple<const char*, con
 TEST_P(SubTokenTest, Initialization)
 {
     const auto& p = GetParam();
-    SubToken token{std::get<0>(p)};
+    AlphanumericSubToken token{std::get<0>(p)};
     EXPECT_EQ(token.s, std::get<1>(p));
     EXPECT_EQ(token.n, std::get<2>(p));
 }
@@ -86,17 +85,17 @@ INSTANTIATE_TEST_SUITE_P(Init, SubTokenTest,
                          testing::Values(
                              std::make_tuple("10", "10", 10),
                              std::make_tuple("01", "01", 1),
-                             std::make_tuple("foo", "foo", rez::REZ_INT_INVALID),
-                             std::make_tuple("foo12", "foo12", rez::REZ_INT_INVALID),
-                             std::make_tuple("12foo", "12foo", rez::REZ_INT_INVALID),
-                             std::make_tuple("-10", "-10", rez::REZ_INT_INVALID)
+                             std::make_tuple("foo", "foo", REZ_INT_INVALID),
+                             std::make_tuple("foo12", "foo12", REZ_INT_INVALID),
+                             std::make_tuple("12foo", "12foo", REZ_INT_INVALID),
+                             std::make_tuple("-10", "-10", REZ_INT_INVALID)
                              ));
 
 //
 // Alphanumeric Token
 //
 
-using SubTokenIL = std::initializer_list<SubToken>;
+using SubTokenIL = std::initializer_list<AlphanumericSubToken>;
 
 // initialization
 class AlphanumericTokenTest : public ::testing::TestWithParam<std::tuple<const char*, SubTokenIL>> {};
@@ -106,8 +105,8 @@ TEST_P(AlphanumericTokenTest, Initialization)
     const auto& string = std::get<0>(param);
     const auto& tokens = std::get<1>(param);
 
-    AlphanumericToken at{string};
-    ASSERT_EQ(at.Size(), tokens.size());
+    AlphanumericToken at = create_alphanumeric_token(string);
+    ASSERT_EQ(at.Get().size(), tokens.size());
 }
 INSTANTIATE_TEST_SUITE_P(Init, AlphanumericTokenTest,
                          testing::Values(
@@ -122,7 +121,8 @@ class AlphanumericTokenStringTest : public testing::TestWithParam<std::pair<cons
 TEST_P(AlphanumericTokenStringTest, IsEqual)
 {
     const auto& p = GetParam();
-    std::string str{AlphanumericToken(p.first)};
+    AlphanumericToken at = create_alphanumeric_token(p.first);
+    std::string str = to_string(at);
     EXPECT_STREQ(str.c_str(), p.second);
 }
 INSTANTIATE_TEST_SUITE_P(StringOperator, AlphanumericTokenStringTest,

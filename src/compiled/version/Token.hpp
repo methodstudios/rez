@@ -5,8 +5,7 @@
 
 #include <regex>
 
-template<typename T>
-class SubToken
+template<typename T> class SubToken
 {
 public:
     explicit SubToken(const T& v)
@@ -44,13 +43,18 @@ public:
 // Token aliases
 //
 
+using NumericValue = rez_int;
+
 template<bool _Rev>
-using NumericTokenT = ComparableValue<rez_int, _Rev>;
+using NumericTokenT = ComparableValue<NumericValue, _Rev>;
 using NumericToken = NumericTokenT<false>;
 using ReversedNumericToken = NumericTokenT<true>;
 
+using AlphanumericSubToken = SubToken<string_view>;
+using AlphanumericValue = std::vector<AlphanumericSubToken>;
+
 template<bool _Rev>
-using AlphanumericTokenT = ComparableValue<std::vector<SubToken<string_view>>, _Rev>;
+using AlphanumericTokenT = ComparableValue<AlphanumericValue, _Rev>;
 using AlphanumericToken = AlphanumericTokenT<false>;
 using ReversedAlphanumericToken = AlphanumericTokenT<true>;
 
@@ -58,7 +62,7 @@ using ReversedAlphanumericToken = AlphanumericTokenT<true>;
 // Token construction
 //
 
-template<bool _Rev = false> NumericTokenT<_Rev> create_numeric_token(const std::string& token)
+template<bool _Rev = false> NumericTokenT<_Rev> create_numeric_token(string_view token)
 {
     return NumericTokenT<_Rev>{to_int(token)};
 }
@@ -68,7 +72,6 @@ template<bool _Rev = false> AlphanumericTokenT<_Rev> create_alphanumeric_token(s
     if (token.empty() && !is_alphanumeric(token))
     {
         std::string message;
-        message.reserve(24 + token.size());
         message.append("Invalid string to parse ");
         message.append(token.data(), token.size());
         throw std::runtime_error(std::move(message));
@@ -107,6 +110,44 @@ template<bool _Rev = false> AlphanumericTokenT<_Rev> create_alphanumeric_token(s
     }
 
     return AlphanumericTokenT<_Rev>{std::move(tokens)};
+}
+
+//
+// To string conversion
+//
+
+template<bool _Rev> std::string to_string(const NumericTokenT<_Rev>& other)
+{
+    return std::to_string(other.Get());
+}
+
+template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
+{
+    std::string str;
+    for(const auto& sub_token : other.Get() )
+    {
+        str += sub_token.s.to_string();
+    }
+    return str;
+}
+
+//
+// User defined literals
+//
+
+inline NumericToken operator"" _nt(const char* v, size_t s)
+{
+    return create_numeric_token(string_view{v, s});
+}
+
+inline AlphanumericSubToken operator "" _st(const char* v, size_t s)
+{
+    return AlphanumericSubToken{string_view{v, s}};
+}
+
+inline AlphanumericToken operator"" _at(const char* v, size_t s)
+{
+    return create_alphanumeric_token(string_view{v, s});
 }
 
 #endif // REZ_TOKEN_HPP

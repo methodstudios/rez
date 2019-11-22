@@ -1,5 +1,5 @@
-#ifndef REZ_COMPARABLEVALUE_HPP
-#define REZ_COMPARABLEVALUE_HPP
+#ifndef REZ_COMPARABLE_VALUE_HPP
+#define REZ_COMPARABLE_VALUE_HPP
 
 #include "Types.hpp"
 
@@ -107,4 +107,4 @@ std::ostream& operator<<(std::ostream& os, const ComparableValue<T, _Rev>& cv)
     return os;
 }
 
-#endif // REZ_COMPARABLEVALUE_HPP
+#endif // REZ_COMPARABLE_VALUE_HPP

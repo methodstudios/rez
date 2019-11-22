@@ -1,7 +1,7 @@
 #ifndef REZ_VERSION_HPP
 #define REZ_VERSION_HPP
 
-#include "NewToken.hpp"
+#include "Token.hpp"
 
 //
 // Version aliases
@@ -15,21 +15,19 @@ using AlphanumericVersion = VersionT<AlphanumericToken, AlphanumericToken::rever
 //
 // Numeric Version construction
 //
-template<bool _Rev = false>
-VersionT<NumericToken, _Rev> create_numeric_version(string_view version)
+template<bool _Rev = false> VersionT<NumericToken, _Rev> create_numeric_version(string_view version)
 {
     typename VersionT<NumericToken, _Rev>::value_type tokens;
-    tokens.emplace_back(to_int(version));
     return VersionT<NumericToken, _Rev>{std::move(tokens)};
 }
 
 //
 // Alphanumeric Version construction
 //
-AlphanumericVersion create_alphanumeric_version(string_view)
+template<bool _Rev = false> VersionT<AlphanumericToken, _Rev> create_alphanumeric_version(string_view)
 {
-    AlphanumericVersion::value_type tokens;
-    return AlphanumericVersion{std::move(tokens)};
+    typename VersionT<AlphanumericToken, _Rev>::value_type tokens;
+    return VersionT<AlphanumericToken, _Rev>{std::move(tokens)};
 }
 
 #endif // REZ_VERSION_HPP

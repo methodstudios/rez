@@ -2,9 +2,8 @@
 
 add_executable(test
         test.cpp
-        test_value.cpp
-        #test_token.cpp
-        #test_version.cpp
+        test_Value.cpp
+        test_Token.cpp
         )
 
 target_link_libraries(test

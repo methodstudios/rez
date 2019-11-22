@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "../version/NewVersion.hpp"
+#include "../version/Version.hpp"
 
 TEST(ValueArray, Methods)
 {
