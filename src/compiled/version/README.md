@@ -44,7 +44,7 @@ using ReversedNumericToken = NumericTokenT<true>;
 
 Object construction does not happen through constructor, but through a function call:
 
-```
+```c++
 template<bool _Rev = false> NumericTokenT<_Rev> create_numeric_token(string_view token)
 {
     return NumericTokenT<_Rev>{to_int(token)};
@@ -58,7 +58,7 @@ but during comparison itself, aforementioned `bool` value is discarded.
 
 Partial specialization for `ComparableValue<T, false>`:
 
-```cpp
+```c++
 template<bool _> bool operator<(const ComparableValue<value_type, _>& other ) const REZ_NOEXCEPT
 {
     return (Get() < other.Get());
@@ -67,7 +67,7 @@ template<bool _> bool operator<(const ComparableValue<value_type, _>& other ) co
 
 Partial specialization for `ComparableValue<T, true>`:
 
-```cpp
+```c++
 template<bool _> bool operator<(const ComparableValue<value_type, _>& other ) const REZ_NOEXCEPT
 {
     return !(Get() < other.Get());
