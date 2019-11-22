@@ -3,11 +3,27 @@
 
 #include "Token.hpp"
 
+template<typename T> struct VersionData
+{
+    explicit VersionData(string_view str)
+    {
+        if(!str.empty())
+        {
+            static std::regex re_token{R"([a-zA-Z0-9_]+)"};
+            // find tokens
+        }
+    }
+
+    std::vector<T> tokens;
+    std::vector<string_view> seps;
+    std::string _str;
+    size_t _hash;
+};
+
 //
 // Version aliases
 //
-template<typename T, bool _Rev>
-using VersionT = ComparableValue<std::vector<T>, _Rev>;
+template<typename T, bool _Rev> using VersionT = Comparable<VersionData<T>, _Rev>;
 
 using NumericVersion = VersionT<NumericToken, NumericToken::reversed>;
 using AlphanumericVersion = VersionT<AlphanumericToken, AlphanumericToken::reversed>;

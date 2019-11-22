@@ -5,7 +5,7 @@ project(version CXX)
 add_library(version SHARED
         ${CMAKE_CURRENT_LIST_DIR}/Types.hpp
         ${CMAKE_CURRENT_LIST_DIR}/Exceptions.hpp
-        ${CMAKE_CURRENT_LIST_DIR}/ComparableValue.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/Comparable.hpp
         ${CMAKE_CURRENT_LIST_DIR}/Token.hpp
         ${CMAKE_CURRENT_LIST_DIR}/Version.hpp
         ${CMAKE_CURRENT_LIST_DIR}/Version.cpp

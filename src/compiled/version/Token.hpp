@@ -1,7 +1,7 @@
 #ifndef REZ_TOKEN_HPP
 #define REZ_TOKEN_HPP
 
-#include "ComparableValue.hpp"
+#include "Comparable.hpp"
 
 #include <regex>
 
@@ -45,16 +45,14 @@ public:
 
 using NumericValue = rez_int;
 
-template<bool _Rev>
-using NumericTokenT = ComparableValue<NumericValue, _Rev>;
+template<bool _Rev> using NumericTokenT = Comparable<NumericValue, _Rev>;
 using NumericToken = NumericTokenT<false>;
 using ReversedNumericToken = NumericTokenT<true>;
 
 using AlphanumericSubToken = SubToken<string_view>;
 using AlphanumericValue = std::vector<AlphanumericSubToken>;
 
-template<bool _Rev>
-using AlphanumericTokenT = ComparableValue<AlphanumericValue, _Rev>;
+template<bool _Rev> using AlphanumericTokenT = Comparable<AlphanumericValue, _Rev>;
 using AlphanumericToken = AlphanumericTokenT<false>;
 using ReversedAlphanumericToken = AlphanumericTokenT<true>;
 

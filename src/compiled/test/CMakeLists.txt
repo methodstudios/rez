@@ -2,7 +2,7 @@
 
 add_executable(test
         test.cpp
-        test_Value.cpp
+        test_Comparable.cpp
         test_Token.cpp
         )
 
