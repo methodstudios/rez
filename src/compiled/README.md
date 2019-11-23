@@ -46,6 +46,8 @@ using ReversedNumericToken = NumericTokenT<true>;
 
 ## Initialization
 
+**TODO: introduce constructors.**
+ 
 Object construction does not happen through constructor, but through a function call:
 
 ```c++

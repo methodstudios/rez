@@ -4,6 +4,31 @@
 #include "Types.hpp"
 
 //
+// Helper class to provide custom constructor to Comparable
+//
+template<typename T> struct Data
+{
+    using value_type = T;
+
+    Data(T&& data)
+        : _data{std::move(data)}
+    {
+    }
+
+    bool operator<(const Data<value_type>& other) const REZ_NOEXCEPT
+    {
+        return _data < other._data;
+    }
+
+    bool operator<(const value_type& other) const REZ_NOEXCEPT
+    {
+        return _data < other;
+    }
+
+    T _data;
+};
+
+//
 // Comparable reversible arbitrary value
 //
 // Explicit constructor constructor allow conversion from Comparable<T, true> to Comparable<T, false>,
@@ -14,35 +39,31 @@ template <typename _Typ, bool _Rev = false> struct Comparable
     using value_type = _Typ;
     static const bool reversed = _Rev;
 
-    // Allows explicitly convert from Normal/Reversible type
-    template<bool _> explicit Comparable(const Comparable<value_type, _>& other)
-        : value_{other.Get()}
-    {
-    }
-
-    // comparision, Reversible type is discarded, that allows compare Normal and Reversed types
-    template<bool _> bool operator<(const Comparable<value_type, _>& other ) const REZ_NOEXCEPT
-    {
-        return (Get() < other.Get());
-    }
-
-    //
-    explicit Comparable(value_type&& v)
-        : value_{std::move(v)}
+    // constructor
+    template<typename... Args> explicit Comparable(Args&&... args)
+        : value_{std::forward<Args>(args)...}
     {
     }
 
     const value_type& Get() const REZ_NOEXCEPT { return value_; }
     value_type& Get()  REZ_NOEXCEPT { return value_; }
 
+    // converters
+    template<bool _> explicit Comparable(const Comparable<value_type, _>& other)
+        : value_{other.Get()}
+    {
+    }
+
+    // comparision Comparable
+    template<bool _> bool operator<(const Comparable<value_type, _>& other ) const REZ_NOEXCEPT
+    {
+        return (Get() < other.Get());
+    }
+
+    // comparision value_type
     bool operator<(const value_type& other) const REZ_NOEXCEPT
     {
         return (Get() < other);
-    }
-
-    bool operator>(const value_type& other) const REZ_NOEXCEPT
-    {
-        return (Get() > other);
     }
 
 private:
@@ -57,6 +78,20 @@ template <typename _Typ> struct Comparable<_Typ, true>
     using value_type = _Typ;
     static const bool reversed = true;
 
+    // constructors
+    explicit Comparable(const value_type& v)
+        : value_{v}
+    {
+    }
+
+    explicit Comparable(value_type&& v)
+        : value_{std::move(v)}
+    {
+    }
+
+    const value_type& Get() const REZ_NOEXCEPT  { return value_; }
+    value_type& Get()  REZ_NOEXCEPT { return value_; }
+
     // Allows explicitly convert from Normal/Reversible type
     template<bool _> explicit Comparable(const Comparable<value_type, _>& other)
         : value_{other.Get()}
@@ -69,23 +104,9 @@ template <typename _Typ> struct Comparable<_Typ, true>
         return !(Get() < other.Get());
     }
 
-    //
-    explicit Comparable(value_type&& v)
-        : value_{std::move(v)}
-    {
-    }
-
-    const value_type& Get() const REZ_NOEXCEPT  { return value_; }
-    value_type& Get()  REZ_NOEXCEPT { return value_; }
-
     bool operator<(const value_type& other) const REZ_NOEXCEPT
     {
         return !(Get() < other);
-    }
-
-    bool operator>(const value_type& other) const REZ_NOEXCEPT
-    {
-        return !(Get() > other);
     }
 
 private:

@@ -5,6 +5,24 @@
 
 #include <regex>
 
+struct NumTokenData : public Data<rez_int>
+{
+    explicit NumTokenData(string_view str)
+        : Data<rez_int>(to_int(str))
+    {
+    }
+
+    explicit NumTokenData(rez_int val)
+        : Data<rez_int>(std::move(val))
+    {
+    }
+};
+
+inline std::ostream& operator<<(std::ostream& os, const NumTokenData& tok)
+{
+    return (os << tok._data);
+}
+
 template<typename T> class SubToken
 {
 public:
@@ -39,18 +57,30 @@ public:
     rez_int n;
 };
 
-//
-// Token aliases
-//
+using NumericValue = NumTokenData;
 
-using NumericValue = rez_int;
-
-template<bool _Rev> using NumericTokenT = Comparable<NumericValue, _Rev>;
+template<bool _Rev> using NumericTokenT = Comparable<NumTokenData, _Rev>;
 using NumericToken = NumericTokenT<false>;
 using ReversedNumericToken = NumericTokenT<true>;
 
+//
+// Alphanumeric Token
+//
+
 using AlphanumericSubToken = SubToken<string_view>;
 using AlphanumericValue = std::vector<AlphanumericSubToken>;
+
+//struct SubTokenData : public Data<std::vector<AlphanumericSubToken>>
+//{
+//    explicit SubTokenData(string_view view)
+//        : Data<std::vector<AlphanumericSubToken>>{{}}
+//    {
+//        if(view.empty())
+//        {
+//            throw std::runtime_error("Hello world");
+//        }
+//    }
+//};
 
 template<bool _Rev> using AlphanumericTokenT = Comparable<AlphanumericValue, _Rev>;
 using AlphanumericToken = AlphanumericTokenT<false>;
@@ -59,11 +89,6 @@ using ReversedAlphanumericToken = AlphanumericTokenT<true>;
 //
 // Token construction
 //
-
-template<bool _Rev = false> NumericTokenT<_Rev> create_numeric_token(string_view token)
-{
-    return NumericTokenT<_Rev>{to_int(token)};
-}
 
 template<bool _Rev = false> AlphanumericTokenT<_Rev> create_alphanumeric_token(string_view token)
 {
@@ -116,7 +141,7 @@ template<bool _Rev = false> AlphanumericTokenT<_Rev> create_alphanumeric_token(s
 
 template<bool _Rev> std::string to_string(const NumericTokenT<_Rev>& other)
 {
-    return std::to_string(other.Get());
+    return std::to_string(other.Get()._data);
 }
 
 template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
@@ -135,7 +160,7 @@ template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
 
 inline NumericToken operator"" _nt(const char* v, size_t s)
 {
-    return create_numeric_token(string_view{v, s});
+    return NumericToken{string_view{v, s}};
 }
 
 inline AlphanumericSubToken operator "" _st(const char* v, size_t s)

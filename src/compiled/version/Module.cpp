@@ -50,8 +50,9 @@ PYBIND11_MODULE(_version, m)
 
     // NumericToken
     auto nn_token = define_comparable_value<NumericValue, false>(m, "NumericToken", version_token);
+    nn_token.def(py::init<string_view>());
+
     auto nr_token = define_comparable_value<NumericValue, true>(m, "ReversedNumericToken", version_token);
-    m.def("create_numeric_token", &create_numeric_token<false>);
 
     auto an_token = define_comparable_value<AlphanumericValue , false>(m, "AlphanumericToken", version_token);
     auto ar_token = define_comparable_value<AlphanumericValue , true>(m, "ReversedAlphanumericToken", version_token);

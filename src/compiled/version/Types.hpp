@@ -12,6 +12,7 @@ inline rez_int operator"" _ri(unsigned long long int v) REZ_NOEXCEPT { return st
 inline std::string operator"" _rs(const char* v) REZ_NOEXCEPT { return {v}; }
 
 static constexpr rez_int REZ_INT_INVALID = static_cast<rez_int>(-1);
+static constexpr size_t REZ_INDEX_INVALID = static_cast<size_t>(-1);
 
 // size of static array
 template <typename T, size_t N> constexpr size_t size(const T (&)[N]) REZ_NOEXCEPT { return N; }
