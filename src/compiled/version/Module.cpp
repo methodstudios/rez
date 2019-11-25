@@ -49,12 +49,12 @@ PYBIND11_MODULE(_version, m)
     py::class_<_ReversedComparable> reversed_comparable{m, "_ReversedComparable", py::module_local()};
 
     // NumericToken
-    auto nn_token = define_comparable_value<NumericValue, false>(m, "NumericToken", version_token);
+    auto nn_token = define_comparable_value<NumericValue, NOR_CMP>(m, "NumericToken", version_token);
     nn_token.def(py::init<string_view>());
 
-    auto nr_token = define_comparable_value<NumericValue, true>(m, "ReversedNumericToken", version_token);
+    auto nr_token = define_comparable_value<NumericValue, REV_CMP>(m, "ReversedNumericToken", version_token);
 
-    auto an_token = define_comparable_value<AlphanumericValue , false>(m, "AlphanumericToken", version_token);
-    auto ar_token = define_comparable_value<AlphanumericValue , true>(m, "ReversedAlphanumericToken", version_token);
-    m.def("create_alphanumeric_token", &create_alphanumeric_token<false>);
+    auto an_token = define_comparable_value<AlphanumericValue , NOR_CMP>(m, "AlphanumericToken", version_token);
+    auto ar_token = define_comparable_value<AlphanumericValue , REV_CMP>(m, "ReversedAlphanumericToken", version_token);
+    m.def("create_alphanumeric_token", &Factory<AlphanumericToken>::Create<NOR_CMP>);
 }

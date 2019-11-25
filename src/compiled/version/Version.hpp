@@ -3,7 +3,7 @@
 
 #include "Token.hpp"
 
-template<typename T> struct VersionData : public Data<T>
+template<typename T> struct VersionData
 {
     explicit VersionData(string_view str)
     {
@@ -82,7 +82,7 @@ using AlphanumericVersion = VersionT<AlphanumericToken, AlphanumericToken::rever
 //
 // Numeric Version construction
 //
-template<bool _Rev = false> VersionT<NumericToken, _Rev> create_numeric_version(string_view version)
+template<bool _Rev = DEF_CMP> VersionT<NumericToken, _Rev> create_numeric_version(string_view version)
 {
     typename VersionT<NumericToken, _Rev>::value_type tokens;
     return VersionT<NumericToken, _Rev>{std::move(tokens)};
@@ -91,7 +91,7 @@ template<bool _Rev = false> VersionT<NumericToken, _Rev> create_numeric_version(
 //
 // Alphanumeric Version construction
 //
-template<bool _Rev = false> VersionT<AlphanumericToken, _Rev> create_alphanumeric_version(string_view)
+template<bool _Rev = DEF_CMP> VersionT<AlphanumericToken, _Rev> create_alphanumeric_version(string_view)
 {
     typename VersionT<AlphanumericToken, _Rev>::value_type tokens;
     return VersionT<AlphanumericToken, _Rev>{std::move(tokens)};

@@ -3,14 +3,14 @@
 ## Comparable type
 
 To avoid dynamic dispatching I turned inheritance into a composition. Pythonic polymorphic base `_Comparable` was replaced with class template: `Comparable<T, bool>`. 
-Through partial specialization of `bool` parameter `_ReversedComparable` is being implemented:
+Through partial specialization of `bool` template parameter, `_ReversedComparable` is being implemented:
 
 ```none
 Comparable<int, false> := _Comparable 
 Comparable<int, true>  := _ReversedComparable
 ```
 
-First template argument `T` is used to define underlying type. Second(`bool`) is used to define behaviour of the compare operators: 
+First template argument `T` is used to define underlying type. Second(`bool`), is used to define behaviour of the compare operators: 
 
 ```c++
 auto a = Comparable<int, false>{10}; // comparison:  < 
@@ -46,21 +46,40 @@ using ReversedNumericToken = NumericTokenT<true>;
 
 ## Initialization
 
-**TODO: introduce constructors.**
- 
-Object construction does not happen through constructor, but through a function call:
+Comparable objects can be manually created, but some of them require a bit more complicated initialization. 
+Therefore `Factory` class template has been created with static method `Create`. Default implementation forwards arguments.
 
 ```c++
-template<bool _Rev = false> NumericTokenT<_Rev> create_numeric_token(string_view token)
+// very basic wrapper for int comparable/reverse comparable
+Comparable<int> int_cmp = Factory<int>::Create(10);
+
+// more sophisticated construction of Numeric Token from c string
+NumericToken nt = Factory<NumericToken>::Create("10");
+``` 
+
+To provide a custom constructor for comparable type we have to define specialization of the `Factory` template class:
+
+```cpp
+template<> struct Factory<NumericToken>
 {
-    return NumericTokenT<_Rev>{to_int(token)};
-}
+    using value_type = NumericToken::value_type;
+
+    template<bool _Rev = false> static Comparable<value_type> Create(string_view token)
+    {
+        return Comparable<value_type, _Rev>{to_int(token)};
+    }
+};
 ```
+
+Note that `Create` static function can be called with additional template parameter to instantiate normal or reversed 
+`Comparable` instance.
+ 
+ This approach allows us to create overrides and keep same basic type of `Comparable<_Typ, _Rev>`.
 
 ## Comparisons
 
-`bool` template argument is only used to match the specialization, and to call proper overloaded comparison operator, 
-but during comparison itself, aforementioned `bool` value is discarded.
+`bool` template argument is only used to match the specialization during the construction. After object is constructed,
+bool argument is discarded and not taken into an account.
 
 Partial specialization for `Comparable<T, false>`:
 

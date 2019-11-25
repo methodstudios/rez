@@ -5,24 +5,6 @@
 
 #include <regex>
 
-struct NumTokenData : public Data<rez_int>
-{
-    explicit NumTokenData(string_view str)
-        : Data<rez_int>(to_int(str))
-    {
-    }
-
-    explicit NumTokenData(rez_int val)
-        : Data<rez_int>(std::move(val))
-    {
-    }
-};
-
-inline std::ostream& operator<<(std::ostream& os, const NumTokenData& tok)
-{
-    return (os << tok._data);
-}
-
 template<typename T> class SubToken
 {
 public:
@@ -57,11 +39,11 @@ public:
     rez_int n;
 };
 
-using NumericValue = NumTokenData;
+using NumericValue = rez_int;
 
-template<bool _Rev> using NumericTokenT = Comparable<NumTokenData, _Rev>;
-using NumericToken = NumericTokenT<false>;
-using ReversedNumericToken = NumericTokenT<true>;
+template<bool _Rev> using NumericTokenT = Comparable<NumericValue, _Rev>;
+using NumericToken = NumericTokenT<NOR_CMP>;
+using ReversedNumericToken = NumericTokenT<REV_CMP>;
 
 //
 // Alphanumeric Token
@@ -70,70 +52,73 @@ using ReversedNumericToken = NumericTokenT<true>;
 using AlphanumericSubToken = SubToken<string_view>;
 using AlphanumericValue = std::vector<AlphanumericSubToken>;
 
-//struct SubTokenData : public Data<std::vector<AlphanumericSubToken>>
-//{
-//    explicit SubTokenData(string_view view)
-//        : Data<std::vector<AlphanumericSubToken>>{{}}
-//    {
-//        if(view.empty())
-//        {
-//            throw std::runtime_error("Hello world");
-//        }
-//    }
-//};
-
 template<bool _Rev> using AlphanumericTokenT = Comparable<AlphanumericValue, _Rev>;
-using AlphanumericToken = AlphanumericTokenT<false>;
-using ReversedAlphanumericToken = AlphanumericTokenT<true>;
+using AlphanumericToken = AlphanumericTokenT<NOR_CMP>;
+using ReversedAlphanumericToken = AlphanumericTokenT<REV_CMP>;
 
 //
-// Token construction
+// Factory specializations
 //
 
-template<bool _Rev = false> AlphanumericTokenT<_Rev> create_alphanumeric_token(string_view token)
+template<> struct Factory<NumericToken>
 {
-    if (token.empty() && !is_alphanumeric(token))
+    using value_type = NumericToken::value_type;
+
+    template<bool _Rev = DEF_CMP> static Comparable<value_type> Create(string_view token)
     {
-        std::string message;
-        message.append("Invalid string to parse ");
-        message.append(token.data(), token.size());
-        throw std::runtime_error(std::move(message));
+        return Comparable<value_type, _Rev>{to_int(token)};
     }
+};
 
-    string_view cached_token = token;
+template<> struct Factory<AlphanumericToken>
+{
+    using value_type = AlphanumericToken::value_type;
 
-    // split by numbers
-    static const std::regex n_regex{R"([0-9]+)", std::regex::optimize};
-
-    std::regex_iterator<string_view::const_iterator> it{cached_token.cbegin(), cached_token.cend(), n_regex};
-    std::regex_iterator<string_view::const_iterator> last{};
-
-    typename AlphanumericTokenT<_Rev>::value_type tokens;
-
-    // no numbers
-    if (it == last)
+    template<bool _Rev = DEF_CMP> static Comparable<value_type> Create(string_view token)
     {
-        tokens.emplace_back(cached_token);
-        return AlphanumericTokenT<_Rev>{std::move(tokens)};
-    }
-
-    // iterate number splits
-    for (; it != last; ++it)
-    {
-        // convert to string value: 12_hello_world_34 -> [12(int), "_hello_world_"(str), 34(int)]
-        if (it->prefix().length())
+        if (token.empty() && !is_alphanumeric(token))
         {
-            const std::cmatch::value_type& match = it->prefix();
+            std::string message;
+            message.append("Invalid string to parse ");
+            message.append(token.data(), token.size());
+            throw std::runtime_error(std::move(message));
+        }
+
+        string_view cached_token = token;
+
+        // split by numbers
+        static const std::regex n_regex{R"([0-9]+)", std::regex::optimize};
+
+        std::regex_iterator<string_view::const_iterator> it{cached_token.cbegin(), cached_token.cend(), n_regex};
+        std::regex_iterator<string_view::const_iterator> last{};
+
+        typename AlphanumericTokenT<_Rev>::value_type tokens;
+
+        // no numbers
+        if (it == last)
+        {
+            tokens.emplace_back(cached_token);
+            return AlphanumericTokenT<_Rev>{std::move(tokens)};
+        }
+
+        // iterate number splits
+        for (; it != last; ++it)
+        {
+            // convert to string value: 12_hello_world_34 -> [12(int), "_hello_world_"(str), 34(int)]
+            if (it->prefix().length())
+            {
+                const std::cmatch::value_type& match = it->prefix();
+                tokens.emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
+            }
+
+            // convert to int value
+            const std::cmatch::value_type& match = (*it)[0];
             tokens.emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
         }
 
-        // convert to int value
-        const std::cmatch::value_type& match = (*it)[0];
-        tokens.emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
+        return AlphanumericTokenT<_Rev>{std::move(tokens)};
     }
-
-    return AlphanumericTokenT<_Rev>{std::move(tokens)};
-}
+};
 
 //
 // To string conversion
@@ -141,7 +126,7 @@ template<bool _Rev = false> AlphanumericTokenT<_Rev> create_alphanumeric_token(s
 
 template<bool _Rev> std::string to_string(const NumericTokenT<_Rev>& other)
 {
-    return std::to_string(other.Get()._data);
+    return std::to_string(other.Get());
 }
 
 template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
@@ -160,7 +145,7 @@ template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
 
 inline NumericToken operator"" _nt(const char* v, size_t s)
 {
-    return NumericToken{string_view{v, s}};
+    return Factory<NumericToken>::Create(string_view{v, s});
 }
 
 inline AlphanumericSubToken operator "" _st(const char* v, size_t s)
@@ -170,7 +155,7 @@ inline AlphanumericSubToken operator "" _st(const char* v, size_t s)
 
 inline AlphanumericToken operator"" _at(const char* v, size_t s)
 {
-    return create_alphanumeric_token(string_view{v, s});
+    return Factory<AlphanumericToken>::Create(string_view{v,s});
 }
 
 #endif // REZ_TOKEN_HPP
