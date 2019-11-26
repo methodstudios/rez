@@ -3,20 +3,21 @@
 
 #include "Types.hpp"
 
-constexpr bool NOR_CMP = false;
-constexpr bool REV_CMP = true;
-constexpr bool DEF_CMP = NOR_CMP;
+#include <type_traits>
+
+constexpr bool NORMAL = false;
+constexpr bool REVERSED = true;
+constexpr bool DEFAULT = NORMAL;
 
 //
 // Comparable reversible arbitrary value
 //
-// Explicit constructor constructor allow conversion from Comparable<T, true> to Comparable<T, false>,
+// Explicit constructor allow conversion from Comparable<T, true> to Comparable<T, false>,
 // Conversion from normal and reverse comparable is not free, it requires copy.
 //
-template<typename _Typ, bool _Rev = DEF_CMP> struct Comparable
+template<typename _Typ, bool _Rev = DEFAULT> struct Comparable
 {
     using value_type = _Typ;
-    static constexpr bool reversed = _Rev;
 
     // constructor
     template<typename... Args> explicit Comparable(Args&&... args)
@@ -24,26 +25,46 @@ template<typename _Typ, bool _Rev = DEF_CMP> struct Comparable
     {
     }
 
-    // data access
-    const value_type& Get() const REZ_NOEXCEPT { return _value; }
-    value_type& Get()  REZ_NOEXCEPT { return _value; }
-
-    // converters
+    // converting constructor
     template<bool _> explicit Comparable(const Comparable<value_type, _>& other)
         : _value{other.Get()}
     {
     }
 
-    // comparision Comparable
+    // data access
+    const value_type& Get() const REZ_NOEXCEPT { return _value; }
+    value_type& Get()  REZ_NOEXCEPT { return _value; }
+
+    // operator->
+    const value_type* operator->() const REZ_NOEXCEPT { return &Get; }
+    value_type* operator->() REZ_NOEXCEPT { return &Get(); }
+
+    // operator*
+    const value_type& operator*() const REZ_NOEXCEPT { return Get(); }
+    value_type& operator*() REZ_NOEXCEPT { return Get(); }
+
+    // operator<
     template<bool _> bool operator<(const Comparable<value_type, _>& other ) const REZ_NOEXCEPT
     {
         return (Get() < other.Get());
     }
 
-    // comparision value_type
+    // operator<
     bool operator<(const value_type& other) const REZ_NOEXCEPT
     {
         return (Get() < other);
+    }
+
+    // operator==
+    template<bool _> bool operator==(const Comparable<value_type, _>& other ) const REZ_NOEXCEPT
+    {
+        return (Get() == other.Get());
+    }
+
+    // operator==
+    bool operator==(const value_type& other) const REZ_NOEXCEPT
+    {
+        return (Get() == other);
     }
 
 private:
@@ -53,10 +74,9 @@ private:
 //
 // Partial specialization for ReversedComparable
 //
-template<typename _Typ> struct Comparable<_Typ, REV_CMP>
+template<typename _Typ> struct Comparable<_Typ, REVERSED>
 {
     using value_type = _Typ;
-    static constexpr bool reversed = REV_CMP;
 
     // constructor
     template<typename... Args> explicit Comparable(Args&&... args)
@@ -64,33 +84,53 @@ template<typename _Typ> struct Comparable<_Typ, REV_CMP>
     {
     }
 
-    // data access
-    const value_type& Get() const REZ_NOEXCEPT { return _value; }
-    value_type& Get()  REZ_NOEXCEPT { return _value; }
-
-    // converters
+    // converting constructor
     template<bool _> explicit Comparable(const Comparable<value_type, _>& other)
         : _value{other.Get()}
     {
     }
 
-    // comparision Comparable
+    // data access
+    const value_type& Get() const REZ_NOEXCEPT { return _value; }
+    value_type& Get()  REZ_NOEXCEPT { return _value; }
+
+    // operator->
+    const value_type* operator->() const REZ_NOEXCEPT { return &Get(); }
+    value_type* operator->() REZ_NOEXCEPT { return &Get(); }
+
+    // operator*
+    const value_type& operator*() const REZ_NOEXCEPT { return Get(); }
+    value_type& operator*() REZ_NOEXCEPT { return Get(); }
+
+    // operator<
     template<bool _> bool operator<(const Comparable<value_type, _>& other ) const REZ_NOEXCEPT
     {
         return !(Get() < other.Get());
     }
 
-    // comparision value_type
+    // operator<
     bool operator<(const value_type& other) const REZ_NOEXCEPT
     {
         return !(Get() < other);
+    }
+
+    // operator==
+    template<bool _> bool operator==(const Comparable<value_type, _>& other ) const REZ_NOEXCEPT
+    {
+        return !(Get() == other.Get());
+    }
+
+    // operator==
+    bool operator==(const value_type& other) const REZ_NOEXCEPT
+    {
+        return !(Get() == other);
     }
 
 private:
     value_type _value;
 };
 
-template<typename T> using ReversedComparable = Comparable<T, REV_CMP>;
+template<typename _Typ> using ReversedComparable = Comparable<_Typ, REVERSED>;
 
 //
 // switches normal comparable <=> reversed comparable, returns a copy! bool template parameter is flipped.
@@ -106,21 +146,50 @@ template<typename _Typ, bool _Rev> Comparable<_Typ, !_Rev> reverse_sort_key(Comp
 }
 
 //
-// operator << overloads
+// is_comparable type
 //
-template<typename T, bool _Rev> std::ostream& operator<<(std::ostream& os, const Comparable<T, _Rev>& cv)
+template<typename _Typ> struct is_comparable : std::false_type
 {
-    os << std::boolalpha << "Comparable: [ reversed: " << _Rev << ", value: " << cv.Get() << " ]";
-    return os;
-}
+};
+
+template<typename _Typ, bool _Rev> struct is_comparable<Comparable<_Typ, _Rev>> : std::true_type
+{
+};
+
+//
+// is reversed comparable type
+//
+template<typename _Typ> struct is_reversed : std::false_type
+{
+    static_assert(is_comparable<_Typ>::value, "Invalid template parameter, expected Comparable!");
+};
+
+template<typename _Typ> struct is_reversed<Comparable<_Typ, false>> : std::false_type
+{
+};
+
+template<typename _Typ> struct is_reversed<Comparable<_Typ, true>> : std::true_type
+{
+};
+
+//
+// operator<<
+//
+//template<typename _Typ, bool _Rev> std::ostream& operator<<(std::ostream& os, const Comparable<_Typ, _Rev>& cv)
+//{
+//    //os << std::boolalpha << "Comparable: [ reversed: " << _Rev << ", value: " << cv.Get() << " ]";
+//    return os;
+//}
 
 //
 // Comparable Factory, specialize to provide custom constructor
 //
 template<typename _Typ> struct Factory
 {
-    using value_type = _Typ;
-    template<bool _Rev = DEF_CMP, typename... Args> static Comparable<value_type, _Rev> Create(Args&&... args)
+    static_assert(is_comparable<_Typ>::value, "Invalid template parameter, expected Comparable!");
+    using value_type = typename _Typ::value_type;
+
+    template<bool _Rev = DEFAULT, typename... Args> static Comparable<value_type, _Rev> Create(Args&&... args)
     {
         return Comparable<value_type, _Rev>{std::forward<Args>(args)...};
     }

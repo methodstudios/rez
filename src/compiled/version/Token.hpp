@@ -20,6 +20,7 @@ public:
         n = is_digit(s) ? to_int(s) : REZ_INT_INVALID;
     }
 
+    // operator<
     bool operator<(const SubToken& other) const REZ_NOEXCEPT
     {
         if (n == REZ_INT_INVALID)
@@ -30,9 +31,22 @@ public:
         return other.n == REZ_INT_INVALID ? false : std::tie(n, s) < std::tie(other.n, other.s);
     }
 
+    // operator<
+    bool operator<(rez_int other) const REZ_NOEXCEPT
+    {
+        return other == REZ_INT_INVALID ? false : n < other;
+    }
+
+    // operator==
     bool operator==(const SubToken& other) const REZ_NOEXCEPT
     {
         return (s == other.s) && (n == other.n);
+    }
+
+    // operator==
+    bool operator==(rez_int other) const REZ_NOEXCEPT
+    {
+        return other == REZ_INT_INVALID ? false : n == other;
     }
 
     T s;
@@ -40,10 +54,10 @@ public:
 };
 
 using NumericValue = rez_int;
-
 template<bool _Rev> using NumericTokenT = Comparable<NumericValue, _Rev>;
-using NumericToken = NumericTokenT<NOR_CMP>;
-using ReversedNumericToken = NumericTokenT<REV_CMP>;
+
+using NumericToken = NumericTokenT<NORMAL>;
+using ReversedNumericToken = NumericTokenT<REVERSED>;
 
 //
 // Alphanumeric Token
@@ -53,8 +67,8 @@ using AlphanumericSubToken = SubToken<string_view>;
 using AlphanumericValue = std::vector<AlphanumericSubToken>;
 
 template<bool _Rev> using AlphanumericTokenT = Comparable<AlphanumericValue, _Rev>;
-using AlphanumericToken = AlphanumericTokenT<NOR_CMP>;
-using ReversedAlphanumericToken = AlphanumericTokenT<REV_CMP>;
+using AlphanumericToken = AlphanumericTokenT<NORMAL>;
+using ReversedAlphanumericToken = AlphanumericTokenT<REVERSED>;
 
 //
 // Factory specializations
@@ -62,9 +76,10 @@ using ReversedAlphanumericToken = AlphanumericTokenT<REV_CMP>;
 
 template<> struct Factory<NumericToken>
 {
+    static_assert(is_comparable<NumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = NumericToken::value_type;
 
-    template<bool _Rev = DEF_CMP> static Comparable<value_type> Create(string_view token)
+    template<bool _Rev = DEFAULT> static Comparable<value_type, _Rev> Create(string_view token)
     {
         return Comparable<value_type, _Rev>{to_int(token)};
     }
@@ -72,16 +87,17 @@ template<> struct Factory<NumericToken>
 
 template<> struct Factory<AlphanumericToken>
 {
+    static_assert(is_comparable<AlphanumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = AlphanumericToken::value_type;
 
-    template<bool _Rev = DEF_CMP> static Comparable<value_type> Create(string_view token)
+    template<bool _Rev = DEFAULT> static Comparable<value_type, _Rev> Create(string_view token)
     {
         if (token.empty() && !is_alphanumeric(token))
         {
             std::string message;
             message.append("Invalid string to parse ");
             message.append(token.data(), token.size());
-            throw std::runtime_error(std::move(message));
+            throw std::runtime_error(message);
         }
 
         string_view cached_token = token;
