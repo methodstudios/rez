@@ -5,6 +5,49 @@
 
 #include <regex>
 
+template<typename _Typ> struct VersionTokenT
+{
+    using value_type = _Typ;
+
+    // data access
+    const value_type& Get() const REZ_NOEXCEPT { return _value; }
+    value_type& Get()  REZ_NOEXCEPT { return _value; }
+
+    // operator->
+    const value_type* operator->() const REZ_NOEXCEPT { return &Get; }
+    value_type* operator->() REZ_NOEXCEPT { return &Get(); }
+
+    // operator*
+    const value_type& operator*() const REZ_NOEXCEPT { return Get(); }
+    value_type& operator*() REZ_NOEXCEPT { return Get(); }
+
+    // operator<
+    bool operator<(const VersionTokenT<value_type>& other) const REZ_NOEXCEPT
+    {
+        return _value < other.Get();
+    }
+
+    // operator<
+    bool operator<(const value_type& other) const REZ_NOEXCEPT
+    {
+        return _value < other;
+    }
+
+    // operator==
+    bool operator==(const VersionTokenT<value_type>& other) const REZ_NOEXCEPT
+    {
+        return _value == other.Get();
+    }
+
+    // operator==
+    bool operator==(const value_type& other) const REZ_NOEXCEPT
+    {
+        return _value == other;
+    }
+
+    value_type _value;
+};
+
 template<typename T> class SubToken
 {
 public:
@@ -53,8 +96,20 @@ public:
     rez_int n;
 };
 
+// is_token type
+template<typename _Typ> struct is_token : std::false_type
+{
+};
+
+template<typename _Typ, bool _Rev> struct is_token<Comparable<VersionTokenT<_Typ>, _Rev>> : std::true_type
+{
+};
+
+//
+// Numeric Token
+//
 using NumericValue = rez_int;
-template<bool _Rev> using NumericTokenT = Comparable<NumericValue, _Rev>;
+template<bool _Rev> using NumericTokenT = Comparable<VersionTokenT<NumericValue>, _Rev>;
 
 using NumericToken = NumericTokenT<NORMAL>;
 using ReversedNumericToken = NumericTokenT<REVERSED>;
@@ -62,11 +117,10 @@ using ReversedNumericToken = NumericTokenT<REVERSED>;
 //
 // Alphanumeric Token
 //
-
 using AlphanumericSubToken = SubToken<string_view>;
 using AlphanumericValue = std::vector<AlphanumericSubToken>;
 
-template<bool _Rev> using AlphanumericTokenT = Comparable<AlphanumericValue, _Rev>;
+template<bool _Rev> using AlphanumericTokenT = Comparable<VersionTokenT<AlphanumericValue>, _Rev>;
 using AlphanumericToken = AlphanumericTokenT<NORMAL>;
 using ReversedAlphanumericToken = AlphanumericTokenT<REVERSED>;
 
@@ -74,7 +128,7 @@ using ReversedAlphanumericToken = AlphanumericTokenT<REVERSED>;
 // Factory specializations
 //
 
-template<> struct Factory<NumericToken>
+template<bool _> struct Factory<NumericTokenT<_>>
 {
     static_assert(is_comparable<NumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = NumericToken::value_type;
@@ -85,7 +139,7 @@ template<> struct Factory<NumericToken>
     }
 };
 
-template<> struct Factory<AlphanumericToken>
+template<bool _> struct Factory<AlphanumericTokenT<_>>
 {
     static_assert(is_comparable<AlphanumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = AlphanumericToken::value_type;
@@ -113,7 +167,7 @@ template<> struct Factory<AlphanumericToken>
         // no numbers
         if (it == last)
         {
-            tokens.emplace_back(cached_token);
+            tokens->emplace_back(cached_token);
             return AlphanumericTokenT<_Rev>{std::move(tokens)};
         }
 
@@ -124,12 +178,12 @@ template<> struct Factory<AlphanumericToken>
             if (it->prefix().length())
             {
                 const std::cmatch::value_type& match = it->prefix();
-                tokens.emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
+                tokens->emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
             }
 
             // convert to int value
             const std::cmatch::value_type& match = (*it)[0];
-            tokens.emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
+            tokens->emplace_back(string_view{match.first, static_cast<size_t>(match.length())});
         }
 
         return AlphanumericTokenT<_Rev>{std::move(tokens)};
@@ -148,7 +202,7 @@ template<bool _Rev> std::string to_string(const NumericTokenT<_Rev>& other)
 template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
 {
     std::string str;
-    for(const auto& sub_token : other.Get() )
+    for(const auto& sub_token : other.Get()._value )
     {
         str += sub_token.s.to_string();
     }
