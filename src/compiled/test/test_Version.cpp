@@ -5,6 +5,10 @@
 TEST(Version, Initialization)
 {
     auto a = Factory<AlphanumericVersion>::Create("1.2.3");
+    auto r = Factory<ReversedAlphanumericVersion>::Create("1.2.4");
+
+    ASSERT_TRUE(a < r);
+    ASSERT_TRUE( r < a );
 
     ASSERT_EQ(a->Size(), 3);
 

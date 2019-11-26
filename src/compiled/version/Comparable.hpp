@@ -3,8 +3,6 @@
 
 #include "Types.hpp"
 
-#include <type_traits>
-
 constexpr bool NORMAL = false;
 constexpr bool REVERSED = true;
 constexpr bool DEFAULT = NORMAL;

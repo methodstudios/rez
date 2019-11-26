@@ -1,6 +1,8 @@
 #ifndef REZ_TYPES_HPP
 #define REZ_TYPES_HPP
 
+#include <type_traits>
+
 #include <nonstd/string_view.hpp>
 
 #define REZ_NOEXCEPT noexcept

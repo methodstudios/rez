@@ -50,8 +50,10 @@ TEST(Comparable, Comparision)
 
 TEST(Comparable, SetGet)
 {
-    Comparable<int> val{0};
-    ASSERT_EQ(*val, 0);
+    Comparable<int> val;
+
+    *val = 5;
+    ASSERT_EQ(*val, 5);
 
     *val = 10;
     ASSERT_EQ(*val, 10);
@@ -65,9 +67,17 @@ TEST(Comparable, CustomDataAccessor)
     };
 
     Comparable<Data> val{0};
-    ASSERT_EQ(val->value, 0);
+    ASSERT_EQ(val->value, 0) << "Value was not set properly";
 
     val->value = 10;
-    ASSERT_EQ(val->value, 10);
+    ASSERT_EQ(val->value, 10) << "Value was not set properly";
 }
 
+TEST(Comparable, Factory)
+{
+    auto n = Factory<Comparable<int, NORMAL>>::Create(10);
+    ASSERT_EQ(is_reversed<decltype(n)>::value, NORMAL) << "Failed to pass NORMAL argument";
+
+    auto r = Factory<Comparable<int, REVERSED>>::Create(10);
+    ASSERT_EQ(is_reversed<decltype(r)>::value, REVERSED) << "Failed to pass REVERSED argument";
+}
