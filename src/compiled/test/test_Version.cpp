@@ -2,11 +2,9 @@
 
 #include "../version/Version.hpp"
 
-#include <memory>
-
 TEST(Version, Initialization)
 {
-    auto a = Factory<VersionT<AlphanumericToken, false>>::Create("1.2.3");
+    auto a = Factory<AlphanumericVersion>::Create("1.2.3");
 
     ASSERT_EQ(a->Size(), 3);
 

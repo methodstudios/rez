@@ -5,7 +5,7 @@
 
 #include <regex>
 
-template<typename _Typ> struct VersionTokenT
+template<typename _Typ> struct TokenData
 {
     using value_type = _Typ;
 
@@ -22,7 +22,7 @@ template<typename _Typ> struct VersionTokenT
     value_type& operator*() REZ_NOEXCEPT { return Get(); }
 
     // operator<
-    bool operator<(const VersionTokenT<value_type>& other) const REZ_NOEXCEPT
+    bool operator<(const TokenData<value_type>& other) const REZ_NOEXCEPT
     {
         return _value < other.Get();
     }
@@ -34,7 +34,7 @@ template<typename _Typ> struct VersionTokenT
     }
 
     // operator==
-    bool operator==(const VersionTokenT<value_type>& other) const REZ_NOEXCEPT
+    bool operator==(const TokenData<value_type>& other) const REZ_NOEXCEPT
     {
         return _value == other.Get();
     }
@@ -101,7 +101,7 @@ template<typename _Typ> struct is_token : std::false_type
 {
 };
 
-template<typename _Typ, bool _Rev> struct is_token<Comparable<VersionTokenT<_Typ>, _Rev>> : std::true_type
+template<typename _Typ, bool _Rev> struct is_token<Comparable<TokenData<_Typ>, _Rev>> : std::true_type
 {
 };
 
@@ -109,7 +109,7 @@ template<typename _Typ, bool _Rev> struct is_token<Comparable<VersionTokenT<_Typ
 // Numeric Token
 //
 using NumericValue = rez_int;
-template<bool _Rev> using NumericTokenT = Comparable<VersionTokenT<NumericValue>, _Rev>;
+template<bool _Rev> using NumericTokenT = Comparable<TokenData<NumericValue>, _Rev>;
 
 using NumericToken = NumericTokenT<NORMAL>;
 using ReversedNumericToken = NumericTokenT<REVERSED>;
@@ -120,7 +120,7 @@ using ReversedNumericToken = NumericTokenT<REVERSED>;
 using AlphanumericSubToken = SubToken<string_view>;
 using AlphanumericValue = std::vector<AlphanumericSubToken>;
 
-template<bool _Rev> using AlphanumericTokenT = Comparable<VersionTokenT<AlphanumericValue>, _Rev>;
+template<bool _Rev> using AlphanumericTokenT = Comparable<TokenData<AlphanumericValue>, _Rev>;
 using AlphanumericToken = AlphanumericTokenT<NORMAL>;
 using ReversedAlphanumericToken = AlphanumericTokenT<REVERSED>;
 
@@ -209,7 +209,7 @@ template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
     return str;
 }
 
-template<typename _Typ> std::ostream& operator<<(std::ostream& os, const VersionTokenT<_Typ>& other)
+template<typename _Typ> std::ostream& operator<<(std::ostream& os, const TokenData<_Typ>& other)
 {
     return (os << other.Get());
 }
