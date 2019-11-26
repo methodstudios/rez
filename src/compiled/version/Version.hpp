@@ -32,6 +32,11 @@ template<typename _Tok> struct VersionData
         return _hash;
     }
 
+    bool operator<(const VersionData<value_type>& other) const REZ_NOEXCEPT
+    {
+        return tokens < other.tokens;
+    }
+
     std::vector<value_type> tokens;
     std::vector<string_view> seps;
 
@@ -56,19 +61,16 @@ template<typename _Typ, bool _Rev> struct is_version<VersionT<_Typ, _Rev>> : std
 };
 
 //
-// partial specialization for version creation
+// Factory
 //
-using NumericVersion = VersionT<NumericToken, NORMAL>;
-
-
-template<typename _Tok, bool _> struct Factory<VersionT<_Tok, _>>
+template<typename _Tok, bool _Rev> struct Factory<VersionT<_Tok, _Rev>>
 {
     static_assert(is_comparable<_Tok>::value, "Invalid template parameter, expected Comparable!");
-    static_assert(is_version<VersionT<_Tok, _>>::value, "Invalid template parameter, expected VersionT!");
+    static_assert(is_version<VersionT<_Tok, _Rev>>::value, "Invalid template parameter, expected VersionT!");
 
     using value_type = _Tok;
 
-    template<bool _Rev = DEFAULT> static VersionT<value_type, _Rev> Create(string_view version)
+    static VersionT<value_type, _Rev> Create(string_view version)
     {
         VersionT<value_type, _Rev> result;
         if(version.empty())
@@ -108,6 +110,10 @@ template<typename _Tok, bool _> struct Factory<VersionT<_Tok, _>>
     }
 };
 
+using NumericVersion = VersionT<NumericToken, NORMAL>;
+using ReversedNumericVersion = VersionT<NumericToken, REVERSED>;
+
 using AlphanumericVersion = VersionT<AlphanumericToken, NORMAL>;
+using ReversedAlphanumericVersion = VersionT<AlphanumericToken, REVERSED>;
 
 #endif // REZ_VERSION_HPP
