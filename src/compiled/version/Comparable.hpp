@@ -175,11 +175,11 @@ template<typename _Typ> struct is_reversed<Comparable<_Typ, true>> : std::true_t
 //
 // operator<<
 //
-//template<typename _Typ, bool _Rev> std::ostream& operator<<(std::ostream& os, const Comparable<_Typ, _Rev>& cv)
-//{
-//    //os << std::boolalpha << "Comparable: [ reversed: " << _Rev << ", value: " << cv.Get() << " ]";
-//    return os;
-//}
+template<typename _Typ, bool _Rev> std::ostream& operator<<(std::ostream& os, const Comparable<_Typ, _Rev>& cv)
+{
+    os << std::boolalpha << "Comparable: [ reversed: " << _Rev << ", value: " << cv.Get() << " ]";
+    return os;
+}
 
 //
 // Comparable Factory, specialize to provide custom constructor
@@ -187,11 +187,12 @@ template<typename _Typ> struct is_reversed<Comparable<_Typ, true>> : std::true_t
 template<typename _Typ> struct Factory
 {
     static_assert(is_comparable<_Typ>::value, "Invalid template parameter, expected Comparable!");
+
     using value_type = typename _Typ::value_type;
 
-    template<bool _Rev = DEFAULT, typename... Args> static Comparable<value_type, _Rev> Create(Args&&... args)
+    template<typename... Args> static Comparable<value_type, is_reversed<_Typ>::value> Create(Args&&... args)
     {
-        return Comparable<value_type, _Rev>{std::forward<Args>(args)...};
+        return Comparable<value_type, is_reversed<_Typ>::value>{std::forward<Args>(args)...};
     }
 };
 

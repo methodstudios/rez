@@ -40,8 +40,8 @@ TEST(Comparable, ReverseSortKey)
 
 TEST(Comparable, Comparision)
 {
-    auto a = Factory<Comparable<bool>>::Create<NORMAL>(false);
-    auto b = Factory<Comparable<bool>>::Create<REVERSED>(true);
+    auto a = Factory<Comparable<bool, NORMAL>>::Create(false);
+    auto b = Factory<Comparable<bool, REVERSED>>::Create(true);
 
     ASSERT_LT(a, b);
     ASSERT_LT(b, a);

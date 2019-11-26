@@ -128,23 +128,23 @@ using ReversedAlphanumericToken = AlphanumericTokenT<REVERSED>;
 // Factory specializations
 //
 
-template<bool _> struct Factory<NumericTokenT<_>>
+template<bool _Rev> struct Factory<NumericTokenT<_Rev>>
 {
     static_assert(is_comparable<NumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = NumericToken::value_type;
 
-    template<bool _Rev = DEFAULT> static Comparable<value_type, _Rev> Create(string_view token)
+    static Comparable<value_type, _Rev> Create(string_view token)
     {
         return Comparable<value_type, _Rev>{to_int(token)};
     }
 };
 
-template<bool _> struct Factory<AlphanumericTokenT<_>>
+template<bool _Rev> struct Factory<AlphanumericTokenT<_Rev>>
 {
     static_assert(is_comparable<AlphanumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = AlphanumericToken::value_type;
 
-    template<bool _Rev = DEFAULT> static Comparable<value_type, _Rev> Create(string_view token)
+    static Comparable<value_type, _Rev> Create(string_view token)
     {
         if (token.empty() && !is_alphanumeric(token))
         {
@@ -196,17 +196,31 @@ template<bool _> struct Factory<AlphanumericTokenT<_>>
 
 template<bool _Rev> std::string to_string(const NumericTokenT<_Rev>& other)
 {
-    return std::to_string(other.Get());
+    return std::to_string(*other.Get());
 }
 
 template<bool _Rev> std::string to_string(const AlphanumericTokenT<_Rev>& other)
 {
     std::string str;
-    for(const auto& sub_token : other.Get()._value )
+    for(const auto& sub_token : *other.Get() )
     {
         str += sub_token.s.to_string();
     }
     return str;
+}
+
+template<typename _Typ> std::ostream& operator<<(std::ostream& os, const VersionTokenT<_Typ>& other)
+{
+    return (os << other.Get());
+}
+
+inline std::ostream& operator<<(std::ostream& os, const AlphanumericValue& other)
+{
+    for(const auto& sub_token : other )
+    {
+        os << sub_token.s.to_string();
+    }
+    return os;
 }
 
 //

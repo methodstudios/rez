@@ -9,7 +9,7 @@ template<typename _Tok> struct VersionData
 {
     static_assert(is_comparable<_Tok>::value, "Invalid template parameter, expected Comparable");
 
-    using value_type = _Tok; // token type
+    using value_type = _Tok; // comparable token
 
     size_t Size() const REZ_NOEXCEPT{ return tokens.size(); }
 
