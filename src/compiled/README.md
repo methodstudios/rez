@@ -38,10 +38,10 @@ There are bunch of alias helpers to define common types:
 
 ```c++
 using NumericValue = rez_int;
-template<bool _Rev> using NumericTokenT = Comparable<NumericValue, _Rev>;
+template<bool _Rev> using NumericTokenT = Comparable<TokenData<NumericValue>, _Rev>;
 
-using NumericToken = NumericTokenT<false>;
-using ReversedNumericToken = NumericTokenT<true>;
+using NumericToken = NumericTokenT<NORMAL>;
+using ReversedNumericToken = NumericTokenT<REVERSED>;
 ```
 
 ## Initialization
@@ -51,7 +51,7 @@ Therefore `Factory` class template has been created with static method `Create`.
 
 ```c++
 // very basic wrapper for int comparable/reverse comparable
-Comparable<int> int_cmp = Factory<int>::Create(10);
+Comparable<int> int_cmp = Factory<Comparable<int>>::Create(10);
 
 // more sophisticated construction of Numeric Token from c string
 NumericToken nt = Factory<NumericToken>::Create("10");
@@ -60,21 +60,17 @@ NumericToken nt = Factory<NumericToken>::Create("10");
 To provide a custom constructor for comparable type we have to define specialization of the `Factory` template class:
 
 ```cpp
-template<> struct Factory<NumericToken>
+template<bool _Rev> struct Factory<NumericTokenT<_Rev>>
 {
+    static_assert(is_comparable<NumericToken>::value, "Invalid template parameter, expected Comparable!");
     using value_type = NumericToken::value_type;
 
-    template<bool _Rev = false> static Comparable<value_type> Create(string_view token)
+    static Comparable<value_type, _Rev> Create(string_view token)
     {
         return Comparable<value_type, _Rev>{to_int(token)};
     }
 };
 ```
-
-Note that `Create` static function can be called with additional template parameter to instantiate normal or reversed 
-`Comparable` instance.
- 
- This approach allows us to create overrides and keep same basic type of `Comparable<_Typ, _Rev>`.
 
 ## Comparisons
 
