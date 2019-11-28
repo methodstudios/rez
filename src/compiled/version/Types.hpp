@@ -23,29 +23,25 @@ inline size_t is_digit(string_view str) REZ_NOEXCEPT
 {
     for (const auto& c : str)
     {
-        if (!std::isdigit(c))
-            return false;
+        if (!std::isdigit(c)) return false;
     }
     return true;
 }
 
+inline bool is_alphanumeric(const char c) REZ_NOEXCEPT { return std::isalnum(c) || c == '_'; }
 inline size_t is_alphanumeric(string_view str) REZ_NOEXCEPT
 {
     for (const auto& c : str)
     {
-        if (!(std::isalnum(c) || c == '_'))
-            return false;
+        if (!is_alphanumeric(c)) return false;
     }
     return true;
 }
 
+inline bool is_version_separator(const char c) REZ_NOEXCEPT { return c == '.' || c == '-'; }
+
 inline rez_int to_int(string_view value)
 {
-    if (value.empty())
-    {
-        throw std::invalid_argument(std::string{"Invalid string to parse: "} + value.to_string());
-    }
-
     // parse chars to rez_int, sigma(10^(iteration) * digit)
     rez_int result{};
     rez_int digit_mul = 1;
@@ -53,12 +49,20 @@ inline rez_int to_int(string_view value)
     {
         if (!std::isdigit(*it))
         {
-            throw std::invalid_argument(std::string{"Invalid string to parse: "} + value.to_string());
+            throw std::invalid_argument("Invalid string to parse: " + value.to_string());
         }
         result += (*it - static_cast<rez_int>('0')) * digit_mul;
     }
 
     return result;
 }
+
+//
+// Factory to create object, when implementation is not provided then it fails to compile
+//
+template <typename _Typ> struct Factory
+{
+    static_assert(true, "Factory not implemented for given type!");
+};
 
 #endif // REZ_TYPES_HPP

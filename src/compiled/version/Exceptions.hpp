@@ -4,9 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-namespace rez
-{
-
 class VersionError : public std::runtime_error
 {
 public:
@@ -16,5 +13,4 @@ public:
     }
 };
 
-} // namespace rez
 #endif // EXCEPTIONS_HPP
