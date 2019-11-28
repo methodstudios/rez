@@ -1,119 +1,146 @@
 #ifndef REZ_VERSION_HPP
 #define REZ_VERSION_HPP
 
+#include "Exceptions.hpp"
 #include "Token.hpp"
 
-#include <iostream>
-
-template<typename _Tok> struct VersionData
+//
+// Version class template
+//
+template <typename _Tok> struct VersionT
 {
-    static_assert(is_comparable<_Tok>::value, "Invalid template parameter, expected Comparable");
+    using value_type = _Tok;
 
-    using value_type = _Tok; // comparable token
+    explicit operator bool() const REZ_NOEXCEPT { return tokens.size() > 0; }
 
-    size_t Size() const REZ_NOEXCEPT{ return tokens.size(); }
+    value_type& operator[](size_t index) REZ_NOEXCEPT
+    {
+        assert(index < tokens.size());
+        return tokens[index];
+    }
+    const value_type& operator[](size_t index) const REZ_NOEXCEPT
+    {
+        assert(index < tokens.size());
+        return tokens[index];
+    }
 
-    explicit operator bool() const REZ_NOEXCEPT { return Size() > 0; }
-
-    value_type& operator[](size_t index) REZ_NOEXCEPT { assert(index < Size()); return tokens[index]; }
-    const value_type& operator[](size_t index) const REZ_NOEXCEPT { assert(index < Size()); return tokens[index];}
-
-    const value_type& Major() const REZ_NOEXCEPT { assert(Size() > 0); return tokens[0]; }
-    const value_type& Minor() const REZ_NOEXCEPT { assert(Size() > 1); return tokens[1]; }
-    const value_type& Patch() const REZ_NOEXCEPT { assert(Size() > 2); return tokens[2]; }
+    const value_type& Major() const REZ_NOEXCEPT
+    {
+        assert(tokens.size() > 0);
+        return tokens[0];
+    }
+    const value_type& Minor() const REZ_NOEXCEPT
+    {
+        assert(tokens.size() > 1);
+        return tokens[1];
+    }
+    const value_type& Patch() const REZ_NOEXCEPT
+    {
+        assert(tokens.size() > 2);
+        return tokens[2];
+    }
 
     size_t Hash() const REZ_NOEXCEPT
     {
-        if(_hash == REZ_INDEX_INVALID)
+        if (_hash == REZ_INDEX_INVALID)
         {
-            static std::hash<std::string> hasher;
+            static std::hash<std::string> string_hash;
+            _hash = string_hash(_str);
+            return _hash;
         }
-
         return _hash;
     }
 
-    bool operator<(const VersionData<value_type>& other) const REZ_NOEXCEPT
-    {
-        return tokens < other.tokens;
-    }
+    template <typename T> bool operator<(const VersionT<T>& other) const REZ_NOEXCEPT { return tokens < other.tokens; }
+
+    const std::vector<value_type>* operator->() const REZ_NOEXCEPT { return &tokens; }
+    std::vector<value_type>* operator->() REZ_NOEXCEPT { return &tokens; }
 
     std::vector<value_type> tokens;
-    std::vector<string_view> seps;
+    std::vector<char> seps;
 
     mutable std::string _str;
     mutable size_t _hash{REZ_INDEX_INVALID};
 };
 
 //
-// Version aliases
+// Version Aliases
 //
-template<typename _Typ, bool _Rev> using VersionT = Comparable<VersionData<_Typ>, _Rev>;
-
-//
-// is_version
-//
-template<typename _Typ> struct is_version : std::false_type
-{
-};
-
-template<typename _Typ, bool _Rev> struct is_version<VersionT<_Typ, _Rev>> : std::true_type
-{
-};
+using NumericVersion = VersionT<NumericToken>;
+using AlphanumericVersion = VersionT<AlphanumericToken>;
 
 //
 // Factory
 //
-template<typename _Tok, bool _Rev> struct Factory<VersionT<_Tok, _Rev>>
+template <typename _Tok> struct Factory<VersionT<_Tok>>
 {
-    static_assert(is_comparable<_Tok>::value, "Invalid template parameter, expected Comparable!");
-    static_assert(is_version<VersionT<_Tok, _Rev>>::value, "Invalid template parameter, expected VersionT!");
-
     using value_type = _Tok;
 
-    static VersionT<value_type, _Rev> Create(string_view version)
+    static VersionT<value_type> Create(string_view version_str)
     {
-        VersionT<value_type, _Rev> result;
-        if(version.empty())
+        VersionT<value_type> result;
+        if (version_str.empty())
         {
             return result;
         }
 
-        static const std::regex re_token{R"([a-zA-Z0-9_]+)"};
-
-        std::regex_iterator<string_view::const_iterator> it{version.cbegin(), version.cend(), re_token};
-        std::regex_iterator<string_view::const_iterator> last{};
-
         //
-        if(it == last)
+        std::vector<char> separators;
+        std::vector<string_view> tokens = VersionSeparatorSplit(version_str, &separators);
+
+        if (tokens.size() == 0 || tokens.size() <= separators.size() )
         {
-            throw std::runtime_error("Invalid version");
+            throw VersionError("Invalid version syntax: " + version_str.to_string());
+        }
+        result.seps = std::move(separators);
+
+        // create tokens
+        try
+        {
+            for (const auto& token : tokens)
+            {
+                result->push_back(Factory<value_type>::Create(token));
+            }
+        }
+        catch (const std::exception& e)
+        {
+            throw VersionError("Invalid version");
         }
 
-        // iterate over numeric/alphanumeric tokens
-        for (; it != last; ++it)
+        return result;
+    }
+
+private:
+    static std::vector<string_view> VersionSeparatorSplit(string_view str, std::vector<char>* separators = nullptr)
+    {
+        std::vector<string_view> result;
+
+        size_t index = 0, count = 0;
+        for (; index < str.size(); ++index)
         {
-            if (it->prefix().length())
+            const auto& c = str[index];
+            if (!is_version_separator(c))
             {
-                const std::cmatch::value_type& match = it->prefix();
-                string_view sep{match.first, static_cast<size_t>(match.length())};
-                result->seps.push_back(sep);
+                ++count;
+                continue;
             }
 
-            // emplace T
-            const std::cmatch::value_type& match = (*it)[0];
-            string_view token_str{match.first, static_cast<size_t>(match.length())};
-            auto token = Factory<value_type>::Create(token_str);
-            result->tokens.push_back(std::move(token));
+            if (separators) separators->push_back(c);
+            if (count) result.push_back(str.substr(index - count, count));
+
+            count = 0;
         }
+
+        if (count) result.push_back(str.substr(index - count, count));
 
         return result;
     }
 };
 
-using NumericVersion = VersionT<NumericToken, NORMAL>;
-using ReversedNumericVersion = VersionT<NumericToken, REVERSED>;
-
-using AlphanumericVersion = VersionT<AlphanumericToken, NORMAL>;
-using ReversedAlphanumericVersion = VersionT<AlphanumericToken, REVERSED>;
+inline NumericVersion operator"" _nv(const char* v, size_t s) { return Factory<NumericVersion>::Create(string_view{v, s}); }
+inline AlphanumericVersion operator"" _anv(const char* v, size_t s)
+{
+    return Factory<AlphanumericVersion>::Create(string_view{v, s});
+}
 
 #endif // REZ_VERSION_HPP
