@@ -67,8 +67,21 @@ INSTANTIATE_TEST_SUITE_P(TokenCount, AlphanumericVersionTokenCountTest,
                              std::make_pair("foo1.2bar-3world5", 3)
                          ));
 
-TEST(A, B)
+
+class AlphanumericVersionToString : public ::testing::TestWithParam<std::pair<string_view, string_view>>{};
+TEST_P(AlphanumericVersionToString, ToString)
 {
-    auto v = Factory<NumericVersion>::Create("10");
-    std::cout << v.Hash() << std::endl;
+    auto version = Factory<AlphanumericVersion>::Create(GetParam().first);
+    auto str = std::string(version);
+    ASSERT_TRUE(GetParam().second == str);
 }
+INSTANTIATE_TEST_SUITE_P(ToString, AlphanumericVersionToString,
+                         testing::Values(
+                             std::make_pair("", "[INF]"),
+                             std::make_pair("1", "1"),
+                             std::make_pair("foo_bar", "foo_bar"),
+                             std::make_pair("1-2", "1-2"),
+                             std::make_pair("1.2", "1.2"),
+                             std::make_pair("1.2-3", "1.2-3"),
+                             std::make_pair("foo1.2bar-3world5", "foo1.2bar-3world5")
+                         ));
