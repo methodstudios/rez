@@ -40,8 +40,6 @@ INSTANTIATE_TEST_SUITE_P(InitializationNoThrow, NumericTokenNoThrowTest,
                              "0", "1234"
                              ));
 
-// comparision
-
 class NumericTokenComparisionTest : public ::testing::TestWithParam<std::pair<const char*, const char*>> {};
 TEST_P(NumericTokenComparisionTest, IsLess)
 {
@@ -101,7 +99,7 @@ INSTANTIATE_TEST_SUITE_P(Init, SubTokenTest,
 using SubTokenIL = std::initializer_list<SubToken>;
 
 // initialization
-class AlphanumericTokenTest : public ::testing::TestWithParam<std::tuple<const char*, SubTokenIL>> {};
+class AlphanumericTokenTest : public ::testing::TestWithParam<std::tuple<string_view, SubTokenIL>> {};
 TEST_P(AlphanumericTokenTest, Initialization)
 {
     const auto& param = GetParam();
@@ -117,15 +115,21 @@ INSTANTIATE_TEST_SUITE_P(Init, AlphanumericTokenTest,
                              ));
 
 // string conversion
-class AlphanumericTokenStringTest : public testing::TestWithParam<std::pair<const char*, const char*>>{};
+class AlphanumericTokenStringTest : public testing::TestWithParam<std::pair<string_view, string_view>>{};
 TEST_P(AlphanumericTokenStringTest, IsEqual)
 {
     const auto& p = GetParam();
     AlphanumericToken at = Factory<AlphanumericToken>::Create(p.first);
     std::string str = to_string(at);
-    EXPECT_STREQ(str.c_str(), p.second);
+    EXPECT_EQ(str.c_str(), p.second);
 }
 INSTANTIATE_TEST_SUITE_P(StringOperator, AlphanumericTokenStringTest,
                          testing::Values(
+                             std::make_pair("0", "0"),
+                             std::make_pair("foo", "foo"),
+                             std::make_pair("foo_bar", "foo_bar"),
+                             std::make_pair("12foo_bar", "12foo_bar"),
+                             std::make_pair("foo_bar12", "foo_bar12"),
+                             std::make_pair("34foo_bar12", "34foo_bar12"),
                              std::make_pair("12_hello_34_world_56_foo_78_bar_98", "12_hello_34_world_56_foo_78_bar_98")
                          ));

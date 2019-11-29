@@ -3,10 +3,10 @@
 
 #include "Types.hpp"
 
-#include <regex>
+#include <vector>
 
 //
-//
+// Alphanumeric Sub Token
 //
 class SubToken
 {
@@ -16,13 +16,13 @@ public:
     explicit SubToken(const value_type& v) REZ_NOEXCEPT
     {
         s = v;
-        n = is_digit(s) ? to_int(s) : REZ_INT_INVALID;
+        n = is_numeric(s) ? to_int(s) : REZ_INT_INVALID;
     }
 
     explicit SubToken(value_type&& v) REZ_NOEXCEPT
     {
-        s = std::move(v);
-        n = is_digit(s) ? to_int(s) : REZ_INT_INVALID;
+        s = v;
+        n = is_numeric(s) ? to_int(s) : REZ_INT_INVALID;
     }
 
     bool operator<(const SubToken& other) const REZ_NOEXCEPT
@@ -72,8 +72,14 @@ inline std::ostream& operator<<(std::ostream& os, const AlphanumericToken& other
 // Token Factory
 //
 
-template <> struct Factory<NumericToken>
+template <template <typename> class CreationPolicy>
+struct PolicyTypeFactory<NumericToken, CreationPolicy> : CreationPolicy<NumericToken>
 {
+    using value_type = typename CreationPolicy<NumericToken>::value_type;
+    using return_type = typename CreationPolicy<NumericToken>::return_type;
+
+    using CreationPolicy<NumericToken>::New;
+
     static NumericToken Create(string_view token)
     {
         if (token.empty())
@@ -81,13 +87,20 @@ template <> struct Factory<NumericToken>
             throw std::invalid_argument(std::string{"Invalid string to parse: "} + token.to_string());
         }
 
-        return to_int(token);
+        return New(to_int(token));
     }
 };
 
-template <> struct Factory<AlphanumericToken>
+template <template <typename> class CreationPolicy>
+struct PolicyTypeFactory<AlphanumericToken, CreationPolicy> : CreationPolicy<AlphanumericToken>
 {
-    static AlphanumericToken Create(string_view token)
+    using value_type = typename CreationPolicy<AlphanumericToken>::value_type;
+    using return_type = typename CreationPolicy<AlphanumericToken>::return_type;
+
+    using CreationPolicy<AlphanumericToken>::New;
+    using CreationPolicy<AlphanumericToken>::Get;
+
+    static return_type Create(string_view token)
     {
         if (token.empty() || !is_alphanumeric(token))
         {
@@ -97,39 +110,53 @@ template <> struct Factory<AlphanumericToken>
             throw std::runtime_error(message);
         }
 
-        // TODO: make more generic it work with string. string_view
-        SubToken::value_type cached_token = token;
+        return_type new_tokens = New();
+        value_type& tokens = Get(new_tokens);
 
-        // split by numbers
-        static const std::regex n_regex{R"([0-9]+)", std::regex::optimize};
-
-        std::regex_iterator<SubToken::value_type::const_iterator> it{cached_token.cbegin(), cached_token.cend(), n_regex};
-        std::regex_iterator<SubToken::value_type::const_iterator> last{};
-
-        AlphanumericToken tokens;
-
-        // no numbers
-        if (it == last)
+        for (auto token_str : SplitAlphanumeric(token))
         {
-            tokens.emplace_back(std::move(cached_token));
-            return {tokens};
+            tokens.emplace_back(token_str);
         }
 
-        // iterate number splits
-        for (; it != last; ++it)
+        return new_tokens;
+    }
+
+private:
+    static std::vector<string_view> SplitAlphanumeric(string_view token)
+    {
+        std::vector<string_view> tokens;
+
+        size_t index{}, n_count{}, a_count{};
+        for (; index < token.size(); ++index)
         {
-            // convert to string value: 12_hello_world_34 -> [12(int), "_hello_world_"(str), 34(int)]
-            if (it->prefix().length())
+            if (is_numeric(token[index]))
             {
-                // TODO: make more generic it work with string. string_view
-                const auto& match = it->prefix();
-                tokens.emplace_back(SubToken::value_type{match.first, static_cast<size_t>(match.length())});
+                if (a_count) // pre existing alpha
+                {
+                    tokens.push_back(token.substr(index - a_count, a_count));
+                    a_count = 0;
+                }
+
+                ++n_count;
+                continue;
             }
 
-            // TODO: make more generic it work with string. string_view
-            const auto& match = (*it)[0];
-            tokens.emplace_back(SubToken::value_type{match.first, static_cast<size_t>(match.length())});
+            if (is_alpha(token[index]))
+            {
+                if (n_count) // pre existing numeric
+                {
+                    tokens.push_back(token.substr(index - n_count, n_count));
+                    n_count = 0;
+                }
+
+                ++a_count;
+                continue;
+            }
         }
+
+        // final check, push remaining numeric or alpha
+        if (a_count) tokens.push_back(token.substr(index - a_count, a_count));
+        if (n_count) tokens.push_back(token.substr(index - n_count, n_count));
 
         return tokens;
     }
