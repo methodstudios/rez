@@ -30,7 +30,7 @@ INSTANTIATE_TEST_SUITE_P(InitializationThrow, NumericTokenThrowTest,
                              ));
 
 
-class NumericTokenNoThrowTest : public ::testing::TestWithParam<const char*> {};
+class NumericTokenNoThrowTest : public ::testing::TestWithParam<string_view> {};
 TEST_P(NumericTokenNoThrowTest, InitializationNoThrow)
 {
     EXPECT_NO_THROW(Factory<NumericToken>::Create(GetParam()));
@@ -40,10 +40,10 @@ INSTANTIATE_TEST_SUITE_P(InitializationNoThrow, NumericTokenNoThrowTest,
                              "0", "1234"
                              ));
 
-class NumericTokenComparisionTest : public ::testing::TestWithParam<std::pair<const char*, const char*>> {};
+class NumericTokenComparisionTest : public ::testing::TestWithParam<std::pair<string_view, string_view>> {};
 TEST_P(NumericTokenComparisionTest, IsLess)
 {
-    EXPECT_LT(
+    ASSERT_LT(
         Factory<NumericToken>::Create(GetParam().first),
         Factory<NumericToken>::Create(GetParam().second));
 }
@@ -55,13 +55,13 @@ INSTANTIATE_TEST_SUITE_P(Something, NumericTokenComparisionTest,
 
 // string conversion
 
-class NumericTokenStringTest : public testing::TestWithParam<std::pair<const char*, const char*>>{};
+class NumericTokenStringTest : public testing::TestWithParam<std::pair<string_view, string_view>>{};
 TEST_P(NumericTokenStringTest, IsEqual)
 {
     const auto& p = GetParam();
     NumericToken nt = Factory<NumericToken>::Create(GetParam().first);
     std::string str = to_string(nt);
-    EXPECT_STREQ(str.c_str(), p.second);
+    ASSERT_EQ(p.second, str);
 }
 INSTANTIATE_TEST_SUITE_P(Init, NumericTokenStringTest,
                          testing::Values(
@@ -79,8 +79,8 @@ TEST_P(SubTokenTest, Initialization)
 {
     const auto& p = GetParam();
     SubToken token{std::get<0>(p)};
-    EXPECT_EQ(token.s, std::get<1>(p));
-    EXPECT_EQ(token.n, std::get<2>(p));
+    ASSERT_EQ(token.s, std::get<1>(p));
+    ASSERT_EQ(token.n, std::get<2>(p));
 }
 INSTANTIATE_TEST_SUITE_P(Init, SubTokenTest,
                          testing::Values(
@@ -121,7 +121,7 @@ TEST_P(AlphanumericTokenStringTest, IsEqual)
     const auto& p = GetParam();
     AlphanumericToken at = Factory<AlphanumericToken>::Create(p.first);
     std::string str = to_string(at);
-    EXPECT_EQ(str.c_str(), p.second);
+    ASSERT_EQ(str.c_str(), p.second);
 }
 INSTANTIATE_TEST_SUITE_P(StringOperator, AlphanumericTokenStringTest,
                          testing::Values(
