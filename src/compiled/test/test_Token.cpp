@@ -1,22 +1,21 @@
 #include <gtest/gtest.h>
 
-#include "../version/token.hpp"
+#include "../version/Token.hpp"
 
-#include <limits>
 #include <utility>
 #include <tuple>
-
-using namespace rez;
 
 //
 // Numeric Token
 //
 
+using rez_impl::operator""_st;
+
 // initialization
 class NumericTokenThrowTest : public ::testing::TestWithParam<const char*> {};
 TEST_P(NumericTokenThrowTest, InitializationThrow)
 {
-    EXPECT_THROW(NumericToken{GetParam()}, std::invalid_argument);
+    EXPECT_THROW(Factory<NumericToken>::Create(GetParam()), std::invalid_argument);
 }
 INSTANTIATE_TEST_SUITE_P(InitializationThrow, NumericTokenThrowTest,
                          testing::Values(
@@ -34,19 +33,19 @@ INSTANTIATE_TEST_SUITE_P(InitializationThrow, NumericTokenThrowTest,
 class NumericTokenNoThrowTest : public ::testing::TestWithParam<const char*> {};
 TEST_P(NumericTokenNoThrowTest, InitializationNoThrow)
 {
-    EXPECT_NO_THROW(NumericToken{GetParam()});
+    EXPECT_NO_THROW(Factory<NumericToken>::Create(GetParam()));
 }
 INSTANTIATE_TEST_SUITE_P(InitializationNoThrow, NumericTokenNoThrowTest,
                          testing::Values(
                              "0", "1234"
                              ));
 
-// comparision
-
 class NumericTokenComparisionTest : public ::testing::TestWithParam<std::pair<const char*, const char*>> {};
 TEST_P(NumericTokenComparisionTest, IsLess)
 {
-    EXPECT_LT(NumericToken{GetParam().first}, NumericToken{GetParam().second});
+    EXPECT_LT(
+        Factory<NumericToken>::Create(GetParam().first),
+        Factory<NumericToken>::Create(GetParam().second));
 }
 
 INSTANTIATE_TEST_SUITE_P(Something, NumericTokenComparisionTest,
@@ -60,7 +59,8 @@ class NumericTokenStringTest : public testing::TestWithParam<std::pair<const cha
 TEST_P(NumericTokenStringTest, IsEqual)
 {
     const auto& p = GetParam();
-    std::string str{NumericToken(p.first)};
+    NumericToken nt = Factory<NumericToken>::Create(GetParam().first);
+    std::string str = to_string(nt);
     EXPECT_STREQ(str.c_str(), p.second);
 }
 INSTANTIATE_TEST_SUITE_P(Init, NumericTokenStringTest,
@@ -86,10 +86,10 @@ INSTANTIATE_TEST_SUITE_P(Init, SubTokenTest,
                          testing::Values(
                              std::make_tuple("10", "10", 10),
                              std::make_tuple("01", "01", 1),
-                             std::make_tuple("foo", "foo", rez::REZ_INT_INVALID),
-                             std::make_tuple("foo12", "foo12", rez::REZ_INT_INVALID),
-                             std::make_tuple("12foo", "12foo", rez::REZ_INT_INVALID),
-                             std::make_tuple("-10", "-10", rez::REZ_INT_INVALID)
+                             std::make_tuple("foo", "foo", REZ_INT_INVALID),
+                             std::make_tuple("foo12", "foo12", REZ_INT_INVALID),
+                             std::make_tuple("12foo", "12foo", REZ_INT_INVALID),
+                             std::make_tuple("-10", "-10", REZ_INT_INVALID)
                              ));
 
 //
@@ -99,33 +99,37 @@ INSTANTIATE_TEST_SUITE_P(Init, SubTokenTest,
 using SubTokenIL = std::initializer_list<SubToken>;
 
 // initialization
-class AlphanumericTokenTest : public ::testing::TestWithParam<std::tuple<const char*, SubTokenIL>> {};
+class AlphanumericTokenTest : public ::testing::TestWithParam<std::tuple<string_view, SubTokenIL>> {};
 TEST_P(AlphanumericTokenTest, Initialization)
 {
     const auto& param = GetParam();
     const auto& string = std::get<0>(param);
     const auto& tokens = std::get<1>(param);
 
-    AlphanumericToken at{string};
-    ASSERT_EQ(at.Size(), tokens.size());
+    AlphanumericToken at = Factory<AlphanumericToken>::Create(string);
+    ASSERT_EQ(at.size(), tokens.size());
 }
 INSTANTIATE_TEST_SUITE_P(Init, AlphanumericTokenTest,
-                         testing::Values(
-                             std::make_tuple("42", SubTokenIL{"42"_st}),
-                             std::make_tuple("foo_bar", SubTokenIL{"foo_bar"_st}),
-                             std::make_tuple("foo_bar42", SubTokenIL{"foo_bar"_st, "42"_st}),
-                             std::make_tuple("42_foo_bar53", SubTokenIL{"42"_st, "_foo_bar"_st, "53"_st})
+                         testing::Values(std::make_tuple("42", SubTokenIL{"42"_st}), std::make_tuple("foo_bar", SubTokenIL{"foo_bar"_st}),
+                                         std::make_tuple("foo_bar42", SubTokenIL{"foo_bar"_st, "42"_st}), std::make_tuple("42_foo_bar53", SubTokenIL{"42"_st, "_foo_bar"_st, "53"_st})
                              ));
 
 // string conversion
-class AlphanumericTokenStringTest : public testing::TestWithParam<std::pair<const char*, const char*>>{};
+class AlphanumericTokenStringTest : public testing::TestWithParam<std::pair<string_view, string_view>>{};
 TEST_P(AlphanumericTokenStringTest, IsEqual)
 {
     const auto& p = GetParam();
-    std::string str{AlphanumericToken(p.first)};
-    EXPECT_STREQ(str.c_str(), p.second);
+    AlphanumericToken at = Factory<AlphanumericToken>::Create(p.first);
+    std::string str = to_string(at);
+    EXPECT_EQ(str.c_str(), p.second);
 }
 INSTANTIATE_TEST_SUITE_P(StringOperator, AlphanumericTokenStringTest,
                          testing::Values(
+                             std::make_pair("0", "0"),
+                             std::make_pair("foo", "foo"),
+                             std::make_pair("foo_bar", "foo_bar"),
+                             std::make_pair("12foo_bar", "12foo_bar"),
+                             std::make_pair("foo_bar12", "foo_bar12"),
+                             std::make_pair("34foo_bar12", "34foo_bar12"),
                              std::make_pair("12_hello_34_world_56_foo_78_bar_98", "12_hello_34_world_56_foo_78_bar_98")
                          ));
