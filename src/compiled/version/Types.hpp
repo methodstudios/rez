@@ -1,6 +1,7 @@
 #ifndef REZ_TYPES_HPP
 #define REZ_TYPES_HPP
 
+#include <memory>
 #include <type_traits>
 
 #include <nonstd/string_view.hpp>
@@ -11,15 +12,18 @@ using rez_int = int64_t;
 using string_view = nonstd::string_view;
 
 inline rez_int operator"" _ri(unsigned long long int v) REZ_NOEXCEPT { return static_cast<rez_int>(v); }
-inline std::string operator"" _rs(const char* v) REZ_NOEXCEPT { return {v}; }
+inline string_view operator"" _rs(const char* v, size_t s) REZ_NOEXCEPT { return {v, s}; }
 
-static constexpr rez_int REZ_INT_INVALID = static_cast<rez_int>(-1);
-static constexpr size_t REZ_INDEX_INVALID = static_cast<size_t>(-1);
+constexpr auto REZ_INT_INVALID = static_cast<rez_int>(-1);
+constexpr auto INDEX_INVALID = static_cast<size_t>(-1);
 
-// size of static array
-template <typename T, size_t N> constexpr size_t size(const T (&)[N]) REZ_NOEXCEPT { return N; }
+// rez specific functions
+inline bool is_alpha(const char c) REZ_NOEXCEPT{ return std::isalpha(c) || c == '_';}
+inline bool is_numeric(const char c) REZ_NOEXCEPT { return std::isdigit(c); }
+inline bool is_alphanumeric(const char c) REZ_NOEXCEPT { return is_numeric(c) || is_alpha(c); }
+inline bool is_version_separator(const char c) REZ_NOEXCEPT { return c == '.' || c == '-'; }
 
-inline size_t is_digit(string_view str) REZ_NOEXCEPT
+inline size_t is_numeric(string_view str) REZ_NOEXCEPT
 {
     for (const auto& c : str)
     {
@@ -28,7 +32,6 @@ inline size_t is_digit(string_view str) REZ_NOEXCEPT
     return true;
 }
 
-inline bool is_alphanumeric(const char c) REZ_NOEXCEPT { return std::isalnum(c) || c == '_'; }
 inline size_t is_alphanumeric(string_view str) REZ_NOEXCEPT
 {
     for (const auto& c : str)
@@ -37,8 +40,6 @@ inline size_t is_alphanumeric(string_view str) REZ_NOEXCEPT
     }
     return true;
 }
-
-inline bool is_version_separator(const char c) REZ_NOEXCEPT { return c == '.' || c == '-'; }
 
 inline rez_int to_int(string_view value)
 {
@@ -58,11 +59,59 @@ inline rez_int to_int(string_view value)
 }
 
 //
-// Factory to create object, when implementation is not provided then it fails to compile
+// Creation Policies for the Factory
 //
-template <typename _Typ> struct Factory
+template <typename _Typ> struct StackCreator
 {
-    static_assert(true, "Factory not implemented for given type!");
+    using value_type = _Typ;
+    using return_type = value_type;
+
+    template <typename... Args> static return_type New(Args&&... args) { return value_type{std::forward<Args>(args)...}; }
+
+    static value_type& Get(return_type& value) { return value; }
 };
+
+template <typename _Typ> struct NewCreator
+{
+    using value_type = _Typ;
+    using return_type = value_type*;
+
+    template <typename... Args> static return_type New(Args&&... args)
+    {
+        return new value_type{std::forward<Args>(args)...};
+    }
+
+    static value_type& Get(return_type value) { return *value; }
+};
+
+template <typename _Typ> struct UniquePtrCreator
+{
+    using value_type = _Typ;
+    using return_type = std::unique_ptr<value_type>;
+
+    template <typename... Args> static return_type New(Args&&... args)
+    {
+        return return_type{new value_type{std::forward<Args>(args)...}};
+    }
+
+    static value_type& Get(return_type& value) { return *value; }
+};
+
+//
+//
+//
+template <typename _Typ, template <typename> class CreationPolicy> struct PolicyTypeFactory : CreationPolicy<_Typ>
+{
+    using value_type = _Typ;
+    using return_type = typename CreationPolicy<_Typ>::return_type;
+
+    template <typename... Args> static return_type Create(Args&&... args)
+    {
+        return CreationPolicy<_Typ>::New(std::forward<Args>(args)...);
+    }
+};
+
+template <typename _Typ, template <typename> class CreationPolicy = StackCreator>
+using Factory = PolicyTypeFactory<_Typ, CreationPolicy>;
 
 #endif // REZ_TYPES_HPP
