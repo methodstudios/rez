@@ -108,6 +108,6 @@ TEST_P(AlphanumericVersionToString, ToString)
     ASSERT_TRUE(GetParam().second == str);
 }
 INSTANTIATE_TEST_SUITE_P(ToString, AlphanumericVersionToString,
-                         Values(std::make_pair("", "[INF]"), std::make_pair("1", "1"), std::make_pair("foo_bar", "foo_bar"),
+                         Values(std::make_pair("", ""), std::make_pair("1", "1"), std::make_pair("foo_bar", "foo_bar"),
                                 std::make_pair("1-2", "1-2"), std::make_pair("1.2", "1.2"), std::make_pair("1.2-3", "1.2-3"),
                                 std::make_pair("foo1.2bar-3world5", "foo1.2bar-3world5")));
