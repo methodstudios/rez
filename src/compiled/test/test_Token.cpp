@@ -12,7 +12,7 @@
 using rez_impl::operator""_st;
 
 // initialization
-class NumericTokenThrowTest : public ::testing::TestWithParam<const char*> {};
+class NumericTokenThrowTest : public ::testing::TestWithParam<string_view> {};
 TEST_P(NumericTokenThrowTest, InitializationThrow)
 {
     EXPECT_THROW(Factory<NumericToken>::Create(GetParam()), std::invalid_argument);
@@ -74,7 +74,7 @@ INSTANTIATE_TEST_SUITE_P(Init, NumericTokenStringTest,
 //
 
 // initialization
-class SubTokenTest : public ::testing::TestWithParam<std::tuple<const char*, const char*, rez_int>> {};
+class SubTokenTest : public ::testing::TestWithParam<std::tuple<string_view, string_view, rez_int>> {};
 TEST_P(SubTokenTest, Initialization)
 {
     const auto& p = GetParam();
