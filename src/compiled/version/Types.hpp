@@ -2,6 +2,7 @@
 #define REZ_TYPES_HPP
 
 #include <memory>
+#include <limits>
 #include <type_traits>
 
 #include <nonstd/string_view.hpp>
@@ -15,6 +16,7 @@ inline rez_int operator"" _ri(unsigned long long int v) REZ_NOEXCEPT { return st
 inline string_view operator"" _rs(const char* v, size_t s) REZ_NOEXCEPT { return {v, s}; }
 
 constexpr auto REZ_INT_INVALID = static_cast<rez_int>(-1);
+constexpr auto REZ_INT_INFINITY = std::numeric_limits<rez_int>::max();
 constexpr auto INDEX_INVALID = static_cast<size_t>(-1);
 
 // rez specific functions
@@ -56,6 +58,16 @@ inline rez_int to_int(string_view value)
     }
 
     return result;
+}
+
+//
+// hash combine taken from boost
+//
+
+template <typename _Typ> inline void hash_combine(std::size_t& seed, const _Typ& v) REZ_NOEXCEPT
+{
+    static std::hash<_Typ> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
 //
