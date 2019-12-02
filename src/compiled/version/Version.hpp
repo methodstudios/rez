@@ -11,6 +11,21 @@ template <typename _Tok> struct VersionT
 {
     using value_type = _Tok;
 
+    static const value_type& TokenInf();
+    static const VersionT<value_type>& Inf();
+
+    VersionT() = default;
+
+    explicit VersionT(const std::vector<value_type>& other_tokens)
+        : tokens{other_tokens}
+    {
+    }
+
+    explicit VersionT(std::vector<value_type>&& other_tokens)
+        : tokens{std::move(other_tokens)}
+    {
+    }
+
     explicit operator bool() const REZ_NOEXCEPT { return tokens.size() > 0; }
 
     value_type& operator[](size_t index) REZ_NOEXCEPT
@@ -44,9 +59,8 @@ template <typename _Tok> struct VersionT
     {
         if (_hash == INDEX_INVALID)
         {
-            static std::hash<std::string> string_hash;
-            _hash = string_hash(_str);
-            return _hash;
+            size_t seed{};
+            _hash = hash_combine(seed, std::string(*this));
         }
         return _hash;
     }
@@ -73,7 +87,15 @@ template <typename _Tok> struct VersionT
         return _str;
     }
 
-    template <typename T> bool operator<(const VersionT<T>& other) const REZ_NOEXCEPT { return tokens < other.tokens; }
+    bool IsEmpty() const REZ_NOEXCEPT { return tokens.empty(); }
+    bool IsInfinity() const REZ_NOEXCEPT { return *this == Inf(); }
+
+    template <typename T> bool operator<(const VersionT<T>& other) const REZ_NOEXCEPT
+    {
+        if(IsInfinity()) return false;
+        if(other.IsInfinity()) return true;
+        return tokens < other.tokens;
+    }
     template <typename T> bool operator==(const VersionT<T>& other) const REZ_NOEXCEPT { return tokens == other.tokens; }
 
     const std::vector<value_type>* operator->() const REZ_NOEXCEPT { return &tokens; }
@@ -82,6 +104,7 @@ template <typename _Tok> struct VersionT
     std::vector<value_type> tokens;
     std::vector<char> seps;
 
+private:
     mutable std::string _str;
     mutable size_t _hash{INDEX_INVALID};
 };
@@ -105,8 +128,6 @@ struct PolicyTypeFactory<VersionT<_Tok>, CreationPolicy> : CreationPolicy<Versio
 
     using CreationPolicy<version_type>::New;
     using CreationPolicy<version_type>::Get;
-//
-    //using value_type = _Tok;
 
     static return_type Create(string_view version_str)
     {
@@ -188,5 +209,13 @@ template <typename _Typ> struct is_version : std::false_type
 template <typename _Typ> struct is_version<VersionT<_Typ>> : std::true_type
 {
 };
+
+//
+// to string
+//
+template<typename _Tok> std::string to_string(const VersionT<_Tok>& other)
+{
+    return std::string{other};
+}
 
 #endif // REZ_VERSION_HPP
