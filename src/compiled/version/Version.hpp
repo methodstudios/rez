@@ -11,10 +11,26 @@ template <typename _Tok> struct VersionT
 {
     using value_type = _Tok;
 
-    static const value_type& TokenInf() REZ_NOEXCEPT;
     static const VersionT<value_type>& Inf() REZ_NOEXCEPT;
 
     VersionT() = default;
+
+    // copy constructor is explicit to avoid unintentional copying
+    explicit VersionT(const VersionT<value_type>& other)
+        : tokens{other.tokens}
+        , seps{other.seps}
+        , _str{new std::string{*other._str}}
+        , _hash{other._hash}
+    {
+    }
+
+    VersionT(VersionT<value_type>&& other) REZ_NOEXCEPT
+        : tokens{std::move(other.tokens)}
+        , seps{std::move(other.seps)}
+        , _str{std::move(other._str)}
+        , _hash(other._hash)
+    {
+    }
 
     explicit VersionT(const std::vector<value_type>& other_tokens)
         : tokens{other_tokens}
@@ -67,24 +83,32 @@ template <typename _Tok> struct VersionT
 
     explicit operator std::string() const
     {
-        if (_str.empty())
+        if(_str)
         {
-            if (IsInfinity())
-            {
-                _str = "[INF]";
-            }
-            else
-            {
-                size_t index{};
-                for (; index < seps.size(); ++index)
-                {
-                    _str.append(to_string(tokens[index]));
-                    _str.append(1, seps[index]);
-                }
-                _str.append(to_string(tokens[index]));
-            }
+            return *_str;
         }
-        return _str;
+
+        if(IsEmpty())
+        {
+            _str = std::unique_ptr<std::string>{new std::string{""}};
+            return *_str;
+        }
+
+        if (IsInfinity())
+        {
+            _str = std::unique_ptr<std::string>{new std::string{"[INF]"}};
+            return *_str;
+        }
+
+        _str = std::unique_ptr<std::string>{new std::string{}};
+        size_t index{};
+        for (; index < seps.size(); ++index)
+        {
+            _str->append(to_string(tokens[index]));
+            _str->append(1, seps[index]);
+        }
+        _str->append(to_string(tokens[index]));
+        return *_str;
     }
 
     bool IsEmpty() const REZ_NOEXCEPT { return tokens.empty(); }
@@ -116,7 +140,7 @@ template <typename _Tok> struct VersionT
     std::vector<char> seps;
 
 private:
-    mutable std::string _str;
+    mutable std::unique_ptr<std::string> _str;
     mutable size_t _hash{REZ_INDEX_INVALID};
 };
 
