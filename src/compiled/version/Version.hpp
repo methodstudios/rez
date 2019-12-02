@@ -11,8 +11,8 @@ template <typename _Tok> struct VersionT
 {
     using value_type = _Tok;
 
-    static const value_type& TokenInf();
-    static const VersionT<value_type>& Inf();
+    static const value_type& TokenInf() REZ_NOEXCEPT;
+    static const VersionT<value_type>& Inf() REZ_NOEXCEPT;
 
     VersionT() = default;
 
@@ -26,7 +26,7 @@ template <typename _Tok> struct VersionT
     {
     }
 
-    explicit operator bool() const REZ_NOEXCEPT { return tokens.size() > 0; }
+    explicit operator bool() const REZ_NOEXCEPT { return !IsEmpty(); }
 
     value_type& operator[](size_t index) REZ_NOEXCEPT
     {
@@ -57,7 +57,7 @@ template <typename _Tok> struct VersionT
 
     size_t Hash() const REZ_NOEXCEPT
     {
-        if (_hash == INDEX_INVALID)
+        if (_hash == REZ_INDEX_INVALID)
         {
             size_t seed{};
             _hash = hash_combine(seed, std::string(*this));
@@ -67,16 +67,16 @@ template <typename _Tok> struct VersionT
 
     explicit operator std::string() const
     {
-        if(_str.empty())
+        if (_str.empty())
         {
-            if(tokens.empty())
+            if (IsInfinity())
             {
                 _str = "[INF]";
             }
             else
             {
                 size_t index{};
-                for(; index<seps.size(); ++index)
+                for (; index < seps.size(); ++index)
                 {
                     _str.append(to_string(tokens[index]));
                     _str.append(1, seps[index]);
@@ -90,13 +90,24 @@ template <typename _Tok> struct VersionT
     bool IsEmpty() const REZ_NOEXCEPT { return tokens.empty(); }
     bool IsInfinity() const REZ_NOEXCEPT { return *this == Inf(); }
 
+    // TODO benchmark if using > directly yields better results
     template <typename T> bool operator<(const VersionT<T>& other) const REZ_NOEXCEPT
     {
-        if(IsInfinity()) return false;
-        if(other.IsInfinity()) return true;
+        if (IsInfinity()) return false;
+        if (other.IsInfinity()) return true;
         return tokens < other.tokens;
     }
+    template <typename T> bool operator>(const VersionT<T>& other) const REZ_NOEXCEPT
+    {
+        return !(*this < other || *this == other);
+    }
+
     template <typename T> bool operator==(const VersionT<T>& other) const REZ_NOEXCEPT { return tokens == other.tokens; }
+    template <typename T> bool operator<=(const VersionT<T>& other) const REZ_NOEXCEPT
+    {
+        return *this < other || *this == other;
+    }
+    template <typename T> bool operator>=(const VersionT<T>& other) const REZ_NOEXCEPT { return !(*this < other); }
 
     const std::vector<value_type>* operator->() const REZ_NOEXCEPT { return &tokens; }
     std::vector<value_type>* operator->() REZ_NOEXCEPT { return &tokens; }
@@ -106,7 +117,7 @@ template <typename _Tok> struct VersionT
 
 private:
     mutable std::string _str;
-    mutable size_t _hash{INDEX_INVALID};
+    mutable size_t _hash{REZ_INDEX_INVALID};
 };
 
 //
@@ -213,9 +224,6 @@ template <typename _Typ> struct is_version<VersionT<_Typ>> : std::true_type
 //
 // to string
 //
-template<typename _Tok> std::string to_string(const VersionT<_Tok>& other)
-{
-    return std::string{other};
-}
+template <typename _Tok> std::string to_string(const VersionT<_Tok>& other) { return std::string{other}; }
 
 #endif // REZ_VERSION_HPP

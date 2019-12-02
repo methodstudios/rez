@@ -10,7 +10,7 @@ template <typename _Typ> struct LowerBound
     using token_type = typename _Typ::value_type;
     using value_type = VersionT<token_type>;
 
-    static const LowerBound<value_type>& Min();
+    static const LowerBound<value_type>& Min() REZ_NOEXCEPT;
 
     LowerBound(const value_type& ver, bool inc)
         : version{ver}
@@ -28,12 +28,12 @@ template <typename _Typ> struct LowerBound
 
     bool operator<(const LowerBound<value_type>& other) const REZ_NOEXCEPT
     {
-        return inclusive != other.inclusive && version < other.version;
+        return (version < other.version) || (version == other.version && inclusive && !other.inclusive);
     }
 
     bool contains_version(const value_type& ver) const REZ_NOEXCEPT
     {
-        return (inclusive && (ver == version)) || (ver < version);
+        return (ver > version) || (inclusive and (ver == version));
     }
 
     size_t Hash() const REZ_NOEXCEPT
@@ -44,8 +44,10 @@ template <typename _Typ> struct LowerBound
 
     explicit operator std::string() const
     {
-        if (version) return inclusive ? std::string(version) + "+" : ">" + std::string(version);
-
+        if (!version.IsEmpty())
+        {
+            return inclusive ? std::string(version) + "+" : ">" + std::string(version);
+        }
         return inclusive ? "" : ">";
     }
 

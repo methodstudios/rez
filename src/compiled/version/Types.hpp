@@ -13,11 +13,10 @@ using rez_int = int64_t;
 using string_view = nonstd::string_view;
 
 inline rez_int operator"" _ri(unsigned long long int v) REZ_NOEXCEPT { return static_cast<rez_int>(v); }
-inline string_view operator"" _rs(const char* v, size_t s) REZ_NOEXCEPT { return {v, s}; }
 
 constexpr auto REZ_INT_INVALID = static_cast<rez_int>(-1);
 constexpr auto REZ_INT_INFINITY = std::numeric_limits<rez_int>::max();
-constexpr auto INDEX_INVALID = static_cast<size_t>(-1);
+constexpr auto REZ_INDEX_INVALID = static_cast<size_t>(-1);
 
 // rez specific functions
 inline bool is_alpha(const char c) REZ_NOEXCEPT{ return std::isalpha(c) || c == '_';}
