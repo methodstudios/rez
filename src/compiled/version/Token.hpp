@@ -13,6 +13,8 @@ class SubToken
 public:
     using value_type = string_view;
 
+    explicit SubToken(rez_int value) REZ_NOEXCEPT : n{value} {}
+
     explicit SubToken(const value_type& v) REZ_NOEXCEPT
     {
         s = v;
@@ -36,7 +38,7 @@ public:
 
     bool operator<(rez_int other) const REZ_NOEXCEPT { return other == REZ_INT_INVALID ? false : n < other; }
 
-    bool operator==(const SubToken& other) const REZ_NOEXCEPT { return (s == other.s) && (n == other.n); }
+    bool operator==(const SubToken& other) const REZ_NOEXCEPT { return (n == other.n) && (s == other.s); }
     bool operator==(rez_int other) const REZ_NOEXCEPT { return other == REZ_INT_INVALID ? false : n == other; }
 
     value_type s;
