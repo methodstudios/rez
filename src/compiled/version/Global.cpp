@@ -2,30 +2,20 @@
 #include "Bound.hpp"
 
 //
-// Numeric Infinity
+// Inf Numeric
 //
-template<> const NumericVersion::value_type& NumericVersion::TokenInf() REZ_NOEXCEPT
-{
-    static NumericVersion::value_type token{REZ_INT_INFINITY};
-    return token;
-}
 template<> const NumericVersion& NumericVersion::Inf() REZ_NOEXCEPT
 {
-    static NumericVersion version{{NumericVersion::TokenInf()}};
+    static NumericVersion version{{NumericVersion::value_type{REZ_INT_INFINITY}}};
     return version;
 }
 
 //
-// Alphanumeric Infinity
+// Inf Alphanumeric
 //
-template<> const AlphanumericVersion::value_type& AlphanumericVersion::TokenInf() REZ_NOEXCEPT
-{
-    static AlphanumericVersion::value_type token{ SubToken{REZ_INT_INFINITY} };
-    return token;
-}
 template<> const AlphanumericVersion& AlphanumericVersion::Inf() REZ_NOEXCEPT
 {
-    static AlphanumericVersion version{{AlphanumericVersion::TokenInf()}};
+    static AlphanumericVersion version{ {AlphanumericVersion::value_type{SubToken{REZ_INT_INFINITY}}}};
     return version;
 }
 
@@ -34,13 +24,25 @@ template<> const AlphanumericVersion& AlphanumericVersion::Inf() REZ_NOEXCEPT
 //
 template<> const LowerBound<NumericVersion>& LowerBound<NumericVersion>::Min() REZ_NOEXCEPT
 {
-    static NumericVersion empty_version = Factory<NumericVersion>::Create("");
-    static LowerBound<NumericVersion> lower_bound{empty_version, true};
+    static LowerBound<NumericVersion> lower_bound{Factory<NumericVersion>::Create(""), true};
     return lower_bound;
 }
 template<> const LowerBound<AlphanumericVersion>& LowerBound<AlphanumericVersion>::Min() REZ_NOEXCEPT
 {
-    static AlphanumericVersion empty_version = Factory<AlphanumericVersion>::Create("");
-    static LowerBound<AlphanumericVersion> lower_bound{empty_version, true};
+    static LowerBound<AlphanumericVersion> lower_bound{Factory<AlphanumericVersion>::Create(""), true};
     return lower_bound;
+}
+
+//
+// Inf Upper Bound
+//
+template<> const UpperBound<NumericVersion>& UpperBound<NumericVersion>::Inf() REZ_NOEXCEPT
+{
+    static UpperBound<NumericVersion> upper_bound{NumericVersion{NumericVersion::Inf()}, true};
+    return upper_bound;
+}
+template<> const UpperBound<AlphanumericVersion>& UpperBound<AlphanumericVersion>::Inf() REZ_NOEXCEPT
+{
+    static UpperBound<AlphanumericVersion> upper_bound{AlphanumericVersion{AlphanumericVersion::Inf()}, true};
+    return upper_bound;
 }
