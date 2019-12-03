@@ -46,3 +46,17 @@ template<> const UpperBound<AlphanumericVersion>& UpperBound<AlphanumericVersion
     static UpperBound<AlphanumericVersion> upper_bound{AlphanumericVersion{AlphanumericVersion::Inf()}, true};
     return upper_bound;
 }
+
+//
+// Any Bound - [Min, Inf]
+//
+template<> const Bound<NumericVersion>& Bound<NumericVersion>::Any() REZ_NOEXCEPT
+{
+    static Bound<NumericVersion> any_bound{};
+    return any_bound;
+}
+template<> const Bound<AlphanumericVersion>& Bound<AlphanumericVersion>::Any() REZ_NOEXCEPT
+{
+    static Bound<AlphanumericVersion> any_bound{};
+    return any_bound;
+}
