@@ -116,7 +116,8 @@ TEST_P(BoundIntersectsTest, ContainsVersionInclusive)
 }
 INSTANTIATE_TEST_SUITE_P(ContainsVersion, BoundIntersectsTest,
                          testing::Values(
-                             std::make_tuple("0.0.1", "0.0.9", "0.0.2", "0.0.4", /* intersects */ true),
+                             std::make_tuple("0.0.1", "0.0.9", "0.0.2", "0.0.4", /* intersects */ true), // A intersects with B
+                             std::make_tuple("0.0.2", "0.0.4", "0.0.1", "0.0.9", /* intersects */ true), // B intersects with A
                              std::make_tuple("0.0.1", "0.0.9", "0.0.2", "0.0.9", /* intersects */ true),
                              std::make_tuple("0.0.1", "0.0.3", "0.0.3", "0.0.5", /* intersects */ false), // inclusive is false
                              std::make_tuple("0.0.1", "0.0.3", "0.0.4", "0.0.5", /* intersects */ false)
