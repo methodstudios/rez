@@ -32,13 +32,10 @@ template <typename _Tok> struct VersionT
     {
     }
 
-    explicit VersionT(const std::vector<value_type>& other_tokens)
-        : tokens{other_tokens}
-    {
-    }
-
-    explicit VersionT(std::vector<value_type>&& other_tokens)
+    // explicit, direct initialization from tokens and separators
+    explicit VersionT(std::vector<value_type>&& other_tokens, std::vector<char>&& other_seps = {})
         : tokens{std::move(other_tokens)}
+        , seps{std::move(other_seps)}
     {
     }
 
@@ -236,7 +233,6 @@ inline AlphanumericVersion operator"" _anv(const char* v, size_t s)
 //
 // Version traits
 //
-
 template <typename _Typ> struct is_version : std::false_type
 {
 };
